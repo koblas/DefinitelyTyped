@@ -240,8 +240,20 @@ declare namespace Office {
      */
     var context: Context;
     /**
-     * This method is called after the Office API was loaded.
-     * @param reason Indicates how the app was initialized
+     * Occurs when the runtime environment is loaded and the add-in is ready to start interacting with the application and hosted document. 
+     * 
+     * The reason parameter of the initialize event listener function returns an `InitializationReason` enumeration value that specifies how initialization occurred. A task pane or content add-in can be initialized in two ways:
+     * 
+     *  - The user just inserted it from Recently Used Add-ins section of the Add-in drop-down list on the Insert tab of the ribbon in the Office host application, or from Insert add-in dialog box.
+     * 
+     *  - The user opened a document that already contains the add-in.
+     * 
+     * *Note*: The reason parameter of the initialize event listener function only returns an `InitializationReason` enumeration value for task pane and content add-ins. It does not return a value for Outlook add-ins.
+     * 
+     * @remarks
+     * Hosts: Access, Excel, Outlook, PowerPoint, Project, Word
+     * 
+     * @param reason Indicates how the app was initialized.
      */
     function initialize(reason: InitializationReason): void;
     /**
@@ -252,8 +264,12 @@ declare namespace Office {
     */
     function onReady(callback?: (info: { host: HostType, platform: PlatformType }) => any): Promise<{ host: HostType, platform: PlatformType }>;
     /**
-     * Indicates if the large namespace for objects will be used or not.
-     * @param useShortNamespace Indicates if 'true' that the short namespace will be used
+     * Toggles on and off the `Office` alias for the full `Microsoft.Office.WebExtension` namespace.
+     * 
+     * @remarks
+     * Hosts: Access, Excel, Outlook, PowerPoint, Project, Word
+     * 
+     * @param useShortNamespace True to use the shortcut alias; otherwise false to disable it. The default is true.
      */
     function useShortNamespace(useShortNamespace: boolean): void;
     // Enumerations
@@ -376,14 +392,14 @@ declare namespace Office {
         */
         asyncContext: any;
         /**
-        * Gets the [AsyncResultStatus](office.asyncresultstatus.md) of the asynchronous operation.
+        * Gets the {@link Office.AsyncResultStatus} of the asynchronous operation.
         *
         * @remarks
         * Hosts: Access, Excel, Outlook, PowerPoint, Project, Word
         */
         status: AsyncResultStatus;
         /**
-        * Gets an [Error](office.error.md) object that provides a description of the error, if any error occurred.
+        * Gets an {@link Office.Error} object that provides a description of the error, if any error occurred.
         *
         * @remarks
         * Hosts: Access, Excel, Outlook, PowerPoint, Project, Word
@@ -459,7 +475,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: Restricted
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -484,7 +500,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: Restricted
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -523,7 +539,7 @@ declare namespace Office {
          */
         name: string;
     }
-    export namespace AddinCommands {
+    namespace AddinCommands {
         /**
          * The event object is passed as a parameter to add-in functions invoked by UI-less command buttons. The object allows the add-in to identify which button was clicked and to signal the host that it has completed its processing.
          * 
@@ -535,12 +551,17 @@ declare namespace Office {
          * 
          * Add-in type: Content, task pane, Outlook
          * 
-         * Minimum permission level: Restricted
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
          *
          * Applicable Outlook mode: Compose or Read
          */
-        export interface Event {
+        interface Event {
             
+            /**
+             * Information about the control that triggered calling this function
+             */
+            source:Source;
+
             /**
              * Indicates that the add-in has completed processing that was triggered by an add-in command button or event handler.
              * 
@@ -552,7 +573,7 @@ declare namespace Office {
              *
              * @remarks
              * 
-             * Minimum permission level: Restricted
+             * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
              *
              * Applicable Outlook mode: Compose or read
              * 
@@ -561,9 +582,22 @@ declare namespace Office {
              */
             completed(options?: any): void;
         }
+
+        /**
+         * Encapsulates source data for add-in events.
+         */
+        interface Source {
+
+            /**
+             * The id of the control that triggered calling this function. The id comes from the manifest and is the unique ID of your Office Add-in as a GUID.
+             */
+            id: string;
+        }
     }
     /**
      * Provides objects and methods that you can use to create and manipulate UI components, such as dialog boxes, in your Office Add-ins.
+     * 
+     * Visit "{@link https://docs.microsoft.com/office/dev/add-ins/develop/dialog-api-in-office-add-ins | Use the Dialog API in your Office Add-ins}" for more information.
      */
     interface UI {
         /**
@@ -576,7 +610,9 @@ declare namespace Office {
         *
         * The initial page must be on the same domain as the parent page (the startAddress parameter). After the initial page loads, you can go to other domains.
         *
-        * Any page calling office.context.ui.messageParent must also be on the same domain as the parent page.
+        * Any page calling `office.context.ui.messageParent` must also be on the same domain as the parent page.
+        * 
+        * **Design considerations**:
         *
         * The following design considerations apply to dialog boxes:
         *
@@ -597,14 +633,62 @@ declare namespace Office {
         * - Temporarily increase the surface area that a user has available to complete a task.
         *
         * Do not use a dialog box to interact with a document. Use a task pane instead.
+        * 
+        * For a design pattern that you can use to create a dialog box, see {@link https://github.com/OfficeDev/Office-Add-in-UX-Design-Patterns/blob/master/Patterns/Client_Dialog.md | Client Dialog}  in the Office Add-in UX Design Patterns repository on GitHub.
+        * 
+        * **displayDialogAsync Errors**:
+        * 
+        * <table>
+        *   <tr>
+        *     <th>Code number</th>
+        *     <th>Meaning</th>
+        *   </tr>
+        *   <tr>
+        *     <td>12004</td>
+        *     <td>The domain of the URL passed to displayDialogAsync is not trusted. The domain must be either the same domain as the host page (including protocol and port number), or it must be registered in the <AppDomains> section of the add-in manifest.</td>
+        *   </tr>
+        *   <tr>
+        *     <td>12005</td>
+        *     <td>The URL passed to displayDialogAsync uses the HTTP protocol. HTTPS is required. (In some versions of Office, the error message returned with 12005 is the same one returned for 12004.)</td>
+        *   </tr>
+        *   <tr>
+        *     <td>12007</td>
+        *     <td>A dialog box is already opened from the task pane. A task pane add-in can only have one dialog box open at a time.</td>
+        *   </tr>
+        * </table>
+        * 
+        * In the callback function passed to the displayDialogAsync method, you can use the properties of the AsyncResult object to return the following information.
+        * 
+        * <table>
+        *   <tr>
+        *     <th>Property</th>
+        *     <th>Use to</th>
+        *   </tr>
+        *   <tr>
+        *     <td>AsyncResult.value</td>
+        *     <td>Access the Dialog object.</td>
+        *   </tr>
+        *   <tr>
+        *     <td>AsyncResult.status</td>
+        *     <td>Determine the success or failure of the operation.</td>
+        *   </tr>
+        *   <tr>
+        *     <td>AsyncResult.error</td>
+        *     <td>Access an Error object that provides error information if the operation failed.<td>
+        *   </tr>
+        *   <tr>
+        *     <td>AsyncResult.asyncContext</td>
+        *     <td>Access your user-defined object or value, if you passed one as the asyncContext parameter.</td>
+        *   </tr>
+        * </table>
         *
         * @param startAddress - Accepts the initial HTTPS URL that opens in the dialog.
-        * @param options - Optional. Accepts a DialogOptions object to define dialog display.
+        * @param options - Optional. Accepts an {@link Office.DialogOptions} object to define dialog display.
         * @param callback - Optional. Accepts a callback method to handle the dialog creation attempt. If successful, the AsyncResult.value is a DialogHandler object.
         */
         displayDialogAsync(startAddress: string, options?: DialogOptions, callback?: (result: AsyncResult) => void): void;
         /**
-         * Delivers a message from the dialog box to its parent/opener page. The page calling this API must be on the same domain as the parent.
+         * Delivers a message from the dialog box to its parent/opener page. The page calling this API must be on the same domain as the parent. 
          * @param messageObject Accepts a message from the dialog to deliver to the add-in.
          */
         messageParent(messageObject: any): void;
@@ -624,6 +708,7 @@ declare namespace Office {
          */
         closeContainer(): void;
     }
+
     /**
      * Provides information about what Requirement Sets are supported in current environment.
      */
@@ -634,7 +719,8 @@ declare namespace Office {
         * @param minVersion - The minimum required version; e.g., "1.4".
         */
        isSetSupported(name: string, minVersion?: number): boolean;
-}
+    }
+
     /**
      * Provides options for how a dialog is displayed.
      */
@@ -661,7 +747,7 @@ declare namespace Office {
      */
     interface Auth {
         /**
-        * Calls the Azure Active Directory V 2.0 endpoint to get an access token to your add-in's web application. Allows add-ins to identify users. Server side code can use this token to access Microsoft Graph for the add-in's web application by using the ["on behalf of" OAuth flow](https://docs.microsoft.com/azure/active-directory/develop/active-directory-v2-protocols-oauth-on-behalf-of).
+        * Calls the Azure Active Directory V 2.0 endpoint to get an access token to your add-in's web application. Allows add-ins to identify users. Server side code can use this token to access Microsoft Graph for the add-in's web application by using the {@link https://docs.microsoft.com/azure/active-directory/develop/active-directory-v2-protocols-oauth-on-behalf-of | "on behalf of" OAuth flow}.
         *
         * @remarks
         * Hosts: Excel, OneNote, Outlook, PowerPoint, Word
@@ -731,7 +817,7 @@ declare namespace Office {
      */
     interface GetBindingDataOptions {
         /**
-         * The expected shape of the selection. Use Office.CoercionType or text value. Default: The original, uncoerced type of the binding.
+         * The expected shape of the selection. Use {@link Office.CoercionType} or text value. Default: The original, uncoerced type of the binding.
          */
         coercionType?: Office.CoercionType | string
         /**
@@ -775,8 +861,9 @@ declare namespace Office {
      */
     interface SetBindingDataOptions {
         /**
-         * Use only with binding type table and when a TableData object is passed for the data parameter. An array of objects that specify a range of columns, rows, or cells and specify, as key-value pairs, the cell formatting to apply to that range. Example: [{cells: Office.Table.Data, format: {fontColor: "yellow"}},
-        {cells: {row: 3, column: 4}, format: {borderColor: "white", fontStyle: "bold"}}]
+         * Use only with binding type table and when a TableData object is passed for the data parameter. An array of objects that specify a range of columns, rows, or cells and specify, as key-value pairs, the cell formatting to apply to that range. 
+         * 
+         * Example: `[{cells: Office.Table.Data, format: {fontColor: "yellow"}}, {cells: {row: 3, column: 4}, format: {borderColor: "white", fontStyle: "bold"}}]`
          */
         cellFormat?: Array<RangeFormatConfiguration>
         /**
@@ -800,7 +887,7 @@ declare namespace Office {
         */
         startColumn?: number
         /**
-        * For an inserted table, a list of key-value pairs that specify table formatting options, such as header row, total row, and banded rows. Example: {bandedRows: true,  filterButton: false}
+        * For an inserted table, a list of key-value pairs that specify table formatting options, such as header row, total row, and banded rows. Example: `{bandedRows: true,  filterButton: false}`
         */
         tableOptions?: object
         /**
@@ -920,7 +1007,7 @@ declare namespace Office {
          */
         valueFormat?: Office.ValueFormat | string
         /**
-         * Specify whether to get only the visible (that is, filtered-in) data or all the data. Useful when filtering data. Use Office.FilterType or string equivalent. This parameter is ignored in Word documents.
+         * Specify whether to get only the visible (that is, filtered-in) data or all the data. Useful when filtering data. Use {@link Office.FilterType} or string equivalent. This parameter is ignored in Word documents.
          */
         filterType?: Office.FilterType | string
         /**
@@ -932,7 +1019,7 @@ declare namespace Office {
      * Provides options for whether to select the location that is navigated to.
      *
      * @remarks
-     * The behavior caused by the options.selectionMode option varies by host:
+     * The behavior caused by the {@link Office.SelectionMode | options.selectionMode} option varies by host:
      *
      * In Excel: Office.SelectionMode.Selected selects all content in the binding, or named item. Office.SelectionMode.None for text bindings, selects the cell; for matrix bindings, table bindings, and named items, selects the first data cell (not first cell in header row for tables).
      *
@@ -942,7 +1029,7 @@ declare namespace Office {
      */
     interface GoToByIdOptions {
         /**
-         * Specifies whether the location specified by the id parameter is selected (highlighted). Use Office.SelectionMode or string equivalent. See the Remarks for more information.
+         * Specifies whether the location specified by the id parameter is selected (highlighted). Use {@link Office.SelectionMode} or string equivalent. See the Remarks for more information.
          */
         selectionMode?: Office.SelectionMode | string
         /**
@@ -955,8 +1042,9 @@ declare namespace Office {
      */
     interface SetSelectedDataOptions {
         /**
-         * Use only with binding type table and when a TableData object is passed for the data parameter. An array of objects that specify a range of columns, rows, or cells and specify, as key-value pairs, the cell formatting to apply to that range. Example: [{cells: Office.Table.Data, format: {fontColor: "yellow"}},
-        {cells: {row: 3, column: 4}, format: {borderColor: "white", fontStyle: "bold"}}]
+         * Use only with binding type table and when a TableData object is passed for the data parameter. An array of objects that specify a range of columns, rows, or cells and specify, as key-value pairs, the cell formatting to apply to that range. 
+         * 
+         * Example: `[{cells: Office.Table.Data, format: {fontColor: "yellow"}}, {cells: {row: 3, column: 4}, format: {borderColor: "white", fontStyle: "bold"}}]`
          */
         cellFormat?: Array<RangeFormatConfiguration>
         /**
@@ -964,7 +1052,7 @@ declare namespace Office {
          */
         coercionType?: Office.CoercionType | string
         /**
-         * For an inserted table, a list of key-value pairs that specify table formatting options, such as header row, total row, and banded rows. Example: {bandedRows: true,  filterButton: false}
+         * For an inserted table, a list of key-value pairs that specify table formatting options, such as header row, total row, and banded rows. Example: `{bandedRows: true,  filterButton: false}`
          */
         tableOptions?: object
         /**
@@ -1028,11 +1116,11 @@ declare namespace Office {
         controlForegroundColor: string;
     }
     /**
-     * Dialog object returned as part of the displayDialogAsync callback. The object exposes methods for registering event handlers and closing the dialog
+     * The object that is returned when `UI.displayDialogAsync` is called. It exposes methods for registering event handlers and closing the dialog.
      */
-    interface DialogHandler {
+    interface Dialog {
         /**
-         * When called from an active add-in dialog, asynchronously closes the dialog.
+         * Called from a parent page to close the corresponding dialog box. 
          */
         close(): void;
         /**
@@ -1092,7 +1180,7 @@ declare namespace Office {
      * Specifies how to coerce data returned or set by the invoked method.
      *
      * @remarks
-     * PowerPoint supports only Office.CoercionType.Text, Office.CoercionType.Image, and Office.CoercionType.SlideRange. Project supports only Office.CoercionType.Text.
+     * PowerPoint supports only `Office.CoercionType.Text`, `Office.CoercionType.Image`, and `Office.CoercionType.SlideRange`. Project supports only `Office.CoercionType.Text`.
      *
      * Hosts: Access, Excel, Outlook, PowerPoint, Project, Word
      */
@@ -1126,7 +1214,7 @@ declare namespace Office {
          */
         Ooxml,
         /**
-         * Return a JSON object that contains an array of the ids, titles, and indexes of the selected slides.For example,  {"slides":[{"id":257,"title":"Slide 2","index":2},{"id":256,"title":"Slide 1","index":1}]} for a selection of two slides.
+         * Return a JSON object that contains an array of the ids, titles, and indexes of the selected slides.For example,  `{"slides":[{"id":257,"title":"Slide 2","index":2},{"id":256,"title":"Slide 1","index":1}]}` for a selection of two slides.
          * @remarks
          * Only applies to data in PowerPoint when calling the Document.getSelectedData method to get the current slide or selected range of slides.
          */
@@ -1194,10 +1282,10 @@ declare namespace Office {
         Text,
     }
     /**
-     * Specifies the kind of event that was raised. Returned by the type property of an EventNameEventArgs object.
+     * Specifies the kind of event that was raised. Returned by the `type` property of an *EventArgs object.
      *
      * @remarks
-     * Add-ins for Project support the Office.EventType.ResourceSelectionChanged, Office.EventType.TaskSelectionChanged, and Office.EventType.ViewSelectionChanged event types.
+     * Add-ins for Project support the `Office.EventType.ResourceSelectionChanged`, `Office.EventType.TaskSelectionChanged`, and `Office.EventType.ViewSelectionChanged` event types.
      *
      * Hosts: Access, Excel, PowerPoint, Project, Word
      */
@@ -1385,6 +1473,8 @@ declare namespace Office {
     * The Binding object is never called directly. It is the abstract parent class of the objects that represent each type of binding: MatrixBinding, TableBinding, or TextBinding. All three of these objects inherit the getDataAsync and setDataAsync methods from the Binding object that enable to you interact with the data in the binding. They also inherit the id and type properties for querying those property values. Additionally, the MatrixBinding and TableBinding objects expose additional methods for matrix- and table-specific features, such as counting the number of rows and columns.
     */
     interface Binding {
+
+
         /**
         * Get the Document object associated with the binding.
         *
@@ -1407,13 +1497,13 @@ declare namespace Office {
         */
         type: BindingType;
         /**
-         * Adds an event handler to the object for the specified event type.
+         * Adds an event handler to the object for the specified {@link Office.EventType}. Supported EventTypes are `Office.EventType.BindingDataChanged` and `Office.EventType.BindingSelectionChanged`.
          *
          * @remarks
          * You can add multiple event handlers for the specified eventType as long as the name of each event handler function is unique.
          *
-         * @param eventType The event type. For example, for bindings, it can be **Office.EventType.BindingSelectionChanged**, **Office.EventType.BindingDataChanged**, or the corresponding text values of these enumerations.
-         * @param handler The event handler function to add.
+         * @param eventType The event type. For bindings, it can be `Office.EventType.BindingDataChanged` or `Office.EventType.BindingSelectionChanged`.
+         * @param handler The event handler function to add, whose only parameter is of type {@link Office.BindingDataChangedEventArgs} or {@link Office.BindingSelectionChangedEventArgs}.
          * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback.
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
          */
@@ -1440,7 +1530,7 @@ declare namespace Office {
          *
          * Available in Requirement set: BindingEvents
          *
-         * @param eventType The event type. For binding can be 'bindingDataChanged' and 'bindingSelectionChanged'
+         * @param eventType The event type. For bindings, it can be `Office.EventType.BindingDataChanged` or `Office.EventType.BindingSelectionChanged`.
          * @param options Provides options to determine which event handler or handlers are removed.
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
          */
@@ -1449,9 +1539,112 @@ declare namespace Office {
          * Writes data to the bound section of the document represented by the specified binding object.
          *
          * @remarks
+         * 
          * Hosts: Access, Excel, Word
          *
          * Available in Requirement sets: MatrixBindings, TableBindings, TextBindings
+         * 
+         * The value passed for data contains the data to be written in the binding. The kind of value passed determines what will be written as described in the following table.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>`data` value</th>
+         *     <th>Data written</th>
+         *   </tr>
+         *   <tr>
+         *     <td>A string</td>
+         *     <td>Plain text or anything that can be coerced to a string will be written.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>An array of arrays ("matrix")</td>
+         *     <td>Tabular data without headers will be written. For example, to write data to three rows in two columns, you can pass an array like this: `[["R1C1", "R1C2"], ["R2C1", "R2C2"], ["R3C1", "R3C2"]]`. To write a single column of three rows, pass an array like this: `[["R1C1"], ["R2C1"], ["R3C1"]]`.</td>
+         *   </tr>
+         *    <tr>
+         *     <td>An {@link Office.TableData} object</td>
+         *     <td>A table with headers will be written.</td>
+         *   </tr>
+         * </table>
+         * 
+         * Additionally, these application-specific actions apply when writing data to a binding. For Word, the specified data is written to the binding as follows:
+         * 
+         * <table>
+         *   <tr>
+         *     <th>`data` value</th>
+         *     <th>Data written</th>
+         *   </tr>
+         *   <tr>
+         *     <td>A string</td>
+         *     <td>The specified text is written.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>An array of arrays ("matrix") or an {@link Office.TableData} object</td>
+         *     <td>A Word table is written.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>HTML</td>
+         *     <td>The specified HTML is written. If any of the HTML you write is invalid, Word will not raise an error. Word will write as much of the HTML as it can and will omit any invalid data.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>Office Open XML ("Open XML")</td>
+         *     <td>The specified the XML is written.</td>
+         *   </tr>
+         * </table>
+         * 
+         * For Excel, the specified data is written to the binding as follows:
+         * 
+         * <table>
+         *   <tr>
+         *     <th>`data` value</th>
+         *     <th>Data written</th>
+         *   </tr>
+         *   <tr>
+         *     <td>A string</td>
+         *     <td>The specified text is inserted as the value of the first bound cell.You can also specify a valid formula to add that formula to the bound cell. For example, setting  data to `"=SUM(A1:A5)"` will total the values in the specified range. However, when you set a formula on the bound cell, after doing so, you can't read the added formula (or any pre-existing formula) from the bound cell. If you call the Binding.getDataAsync method on the bound cell to read its data, the method can return only the data displayed in the cell (the formula's result).</td>
+         *   </tr>
+         *   <tr>
+         *     <td>An array of arrays ("matrix"), and the shape exactly matches the shape of the binding specified</td>
+         *     <td>The set of rows and columns are written.You can also specify an array of arrays that contain valid formulas to add them to the bound cells. For example, setting  data to `[["=SUM(A1:A5)","=AVERAGE(A1:A5)"]]` will add those two formulas to a binding that contains two cells. Just as when setting a formula on a single bound cell, you can't read the added formulas (or any pre-existing formulas) from the binding with the `Binding.getDataAsync` method - it returns only the data displayed in the bound cells.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>An {@link Office.TableData} object, and the shape of the table matches the bound table.</td>
+         *     <td>The specified set of rows and/or headers are written, if no other data in surrounding cells will be overwritten. Note: If you specify formulas in the TableData object you pass for the *data* parameter, you might not get the results you expect due to the "calculated columns" feature of Excel, which automatically duplicates formulas within a column. To work around this when you want to write *data* that contains formulas to a bound table, try specifying the data as an array of arrays (instead of a TableData object), and specify the *coercionType* as Microsoft.Office.Matrix or "matrix".</td>
+         *   </tr>
+         * </table>
+         * 
+         * For Excel Online:
+         * 
+         *  - The total number of cells in the value passed to the data parameter can't exceed 20,000 in a single call to this method.
+         * 
+         *  - The number of formatting groups passed to the cellFormat parameter can't exceed 100. A single formatting group consists of a set of formatting applied to a specified range of cells.
+         * 
+         * In all other cases, an error is returned.
+         * 
+         * The setDataAsync method will write data in a subset of a table or matrix binding if the optional startRow and startColumn parameters are specified, and they specify a valid range.
+         * 
+         * In the callback function passed to the setDataAsync method, you can use the properties of the AsyncResult object to return the following information.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Property</th>
+         *     <th>Use to...</th>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.value</td>
+         *     <td>Always returns undefined because there is no object or data to retrieve.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.status</td>
+         *     <td>Determine the success or failure of the operation.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.error</td>
+         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.asyncContext</td>
+         *     <td>A user-defined item of any type that is returned in the AsyncResult object without being altered.</td>
+         *   </tr>
+         * </table>
          *
          * @param data The data to be set in the current selection. Possible data types by host:
          *
@@ -1459,7 +1652,7 @@ declare namespace Office {
          *
          *        array of arrays: Excel and Word only
          *
-         *        [TableData](office.tabledata.md): Access, Excel, and Word only
+         *        {@link Office.TableData}: Access, Excel, and Word only
          *
          *        HTML: Word and Word Online only
          *
@@ -1467,10 +1660,78 @@ declare namespace Office {
          *
          * @param options Provides options for how to set the data in a binding.
          *
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
+         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult. You can use the properties of the AsyncResult object to return the following information.
          */
         setDataAsync(data: TableData | any, options?: SetBindingDataOptions, callback?: (result: AsyncResult) => void): void;
     }
+
+    /**
+     * Provides information about the binding that raised the DataChanged event.
+     * 
+     * @remarks
+     * Hosts: Access, Excel, Word
+     */
+    interface BindingDataChangedEventArgs {
+        /**
+         * Gets an {@link Office.Binding} object that represents the binding that raised the DataChanged event.
+         */
+        binding: Binding;
+
+        /**
+         * Gets an {@link Office.EventType} enumeration value that identifies the kind of event that was raised.
+         */
+        type: EventType;
+    }
+
+    /**
+     * Provides information about the binding that raised the SelectionChanged event.
+     * 
+     * @remarks
+     * Hosts: Access, Excel, Word
+     */
+    interface BindingSelectionChangedEventArgs {
+        /**
+         * Gets an {@link Office.Binding} object that represents the binding that raised the SelectionChanged event.
+         */
+        binding: Binding;
+        /**
+         * Gets the number of columns selected. If a single cell is selected returns 1. 
+         * 
+         * If the user makes a non-contiguous selection, the count for the last contiguous selection within the binding is returned. 
+         * 
+         * For Word, this property will work only for bindings of {@link Office.BindingType} "table". If the binding is of type "matrix", null is returned. Also, the call will fail if the table contains merged cells, because the structure of the table must be uniform for this property to work correctly.
+         */
+        columnCount: number;
+        /**
+         * Gets the number of rows selected. If a single cell is selected returns 1. 
+         * 
+         * If the user makes a non-contiguous selection, the count for the last contiguous selection within the binding is returned. 
+         * 
+         * For Word, this property will work only for bindings of {@link Office.BindingType} "table". If the binding is of type "matrix", null is returned. Also, the call will fail if the table contains merged cells, because the structure of the table must be uniform for this property to work correctly.
+         */
+        rowCount: number;
+        /**
+         * The zero-based index of the first column of the selection counting from the leftmost column in the binding. 
+         * 
+         * If the user makes a non-contiguous selection, the coordinates for the last contiguous selection within the binding are returned. 
+         * 
+         * For Word, this property will work only for bindings of {@link Office.BindingType} "table". If the binding is of type "matrix", null is returned. Also, the call will fail if the table contains merged cells, because the structure of the table must be uniform for this property to work correctly.
+         */
+        startColumn: number;
+        /**
+         * The zero-based index of the first row of the selection counting from the first row in the binding. 
+         * 
+         * If the user makes a non-contiguous selection, the coordinates for the last contiguous selection within the binding are returned. 
+         * 
+         * For Word, this property will work only for bindings of {@link Office.BindingType} "table". If the binding is of type "matrix", null is returned. Also, the call will fail if the table contains merged cells, because the structure of the table must be uniform for this property to work correctly.
+         */
+        startRow: number;
+        /**
+         * Gets an {@link Office.EventType} enumeration value that identifies the kind of event that was raised.
+         */
+        type: EventType;
+    }
+
     /**
     * Represents the bindings the add-in has within the document.
     *
@@ -1479,9 +1740,9 @@ declare namespace Office {
     */
     interface Bindings {
         /**
-        * Gets a Document object that represents the document associated with this set of bindings.
+        * Gets an {@link Office.Document} object that represents the document associated with this set of bindings.
         *
-        *remarks
+        * @remarks
         * Hosts: Access, Excel, Word
         */
         document: Document;
@@ -1499,14 +1760,14 @@ declare namespace Office {
          *
          *     Note: In Excel, when specifying a table as a named item, you must fully qualify the name to include the worksheet name in the name of the table in this format: "Sheet1!Table1"
          *
-         * For Word, the itemName parameter refers to the Title property of a Rich Text content control. (You can't bind to content controls other than the Rich Text content control.)
+         * For Word, the itemName parameter refers to the Title property of a Rich Text content control. (You can't bind to content controls other than the Rich Text content control).
          *
          * By default, a content control has no Title value assigned. To assign a meaningful name in the Word UI, after inserting a Rich Text content control from the Controls group on the Developer tab of the ribbon, use the Properties command in the Controls group to display the Content Control Properties dialog box. Then set the Title property of the content control to the name you want to reference from your code.
          *
          *     Note: In Word, if there are multiple Rich Text content controls with the same Title property value (name), and you try to bind to one these content controls with this method (by specifying its name as the itemName parameter), the operation will fail.
          *
          * @param itemName Name of the bindable object in the document. For Example 'MyExpenses' table in Excel."
-         * @param bindingType The Office BindingType for the data. The method returns null if the selected object cannot be coerced into the specified type.
+         * @param bindingType The {@link Office.BindingType} for the data. The method returns null if the selected object cannot be coerced into the specified type.
          * @param options Provides options for configuring the binding that is created.
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
          */
@@ -1712,7 +1973,7 @@ declare namespace Office {
         setXmlAsync(xml: string, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
     }
     /**
-     * Represents a single CustomXMLPart in a CustomXMLParts collection.
+     * Represents a single CustomXMLPart in an {@link Office.CustomXmlParts} collection.
      *
      * @remarks
      * Hosts: Word
@@ -1739,7 +2000,7 @@ declare namespace Office {
          */
         id: string;
         /**
-         * Gets the set of namespace prefix mappings (CustomXMLPrefixMappings) used against the current CustomXMLPart.
+         * Gets the set of namespace prefix mappings ({@link Office.CustomXmlPrefixMappings}) used against the current CustomXMLPart.
          *
          * @remarks
          * Hosts: Word
@@ -1747,6 +2008,7 @@ declare namespace Office {
          * Available in Requirement set: CustomXmlParts
          */
         namespaceManager: CustomXmlPrefixMappings;
+
         /**
          * Adds an event handler to the object using the specified event type.
          *
@@ -1755,9 +2017,9 @@ declare namespace Office {
          *
          * You can add multiple event handlers for the specified eventType as long as the name of each event handler function is unique.
          *
-         * @param eventType Specifies the type of event to add. Required. For a CustomXmlPart object event, the eventType parameter can be specified as Office.EventType.DataNodeDeleted, Office.EventType.DataNodeInserted, Office.EventType.DataNodeReplaced, or the corresponding text values of these enumerations.
-         * @param handler The event handler function to add, whose only parameter is of type NodeDeletedEventArgs, NodeInsertedEventArgs, or NodeReplaceEventArgs. Required.
-         * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback..
+         * @param eventType Specifies the type of event to add. For a CustomXmlPart object, the eventType parameter can be specified as `Office.EventType.NodeDeleted`, `Office.EventType.NodeInserted`, and `Office.EventType.NodeReplaced`.
+         * @param handler The event handler function to add, whose only parameter is of type {@link Office.NodeDeletedEventArgs}, {@link Office.NodeInsertedEventArgs}, or {@link Office.NodeReplacedEventArgs}
+         * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback.
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
          */
         addHandlerAsync(eventType: EventType, handler: (result: any) => void, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
@@ -1806,12 +2068,78 @@ declare namespace Office {
          *
          * Available in Requirement set: CustomXmlParts
          *
-         * @param eventType Specifies the type of event to remove. Required.For a CustomXmlPart object event, the eventType parameter can be specified as Office.EventType.DataNodeDeleted, Office.EventType.DataNodeInserted, Office.EventType.DataNodeReplaced, or the corresponding text values of these enumerations.
+         * @param eventType Specifies the type of event to remove. For a CustomXmlPart object, the eventType parameter can be specified as `Office.EventType.NodeDeleted`, `Office.EventType.NodeInserted`, and `Office.EventType.NodeReplaced`.
+         * @param handler The name of the handler to remove.
          * @param options Provides options to determine which event handler or handlers are removed.
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
          */
         removeHandlerAsync(eventType: EventType, handler?: (result: any) => void, options?: RemoveHandlerOptions, callback?: (result: AsyncResult) => void): void;
     }
+
+    /**
+     * Provides information about the deleted node that raised the dataNodeDeleted event.
+     * 
+     * @remarks
+     * Hosts: Word
+     */
+    interface NodeDeletedEventArgs {
+        /**
+         * Gets whether the node was deleted as part of an Undo/Redo action by the user.
+         */
+        isUndoRedo: boolean;
+        /**
+         * Gets the former next sibling of the node that was just deleted from the {@link Office.CustomXmlPart} object.
+         */
+        oldNextSibling: CustomXmlNode;
+        /**
+         * Gets the node which was just deleted from the {@link Office.CustomXmlPart} object.
+         * 
+         * Note that this node may have children, if a subtree is being removed from the document. Also, this node will be a "disconnected" node in that you can query down from the node, but you cannot query up the tree - the node appears to exist alone.
+         */
+        oldNode: CustomXmlNode;
+    }
+
+    /**
+     * Provides information about the inserted node that raised the dataNodeInserted event.
+     * 
+     * @remarks
+     * Hosts: Word
+     */
+    interface NodeInsertedEventArgs  {
+        /**
+         * Gets whether the node was inserted as part of an Undo/Redo action by the user.
+         */
+        isUndoRedo: boolean;
+        /**
+         * Gets the node that was just added to the CustomXMLPart object.
+         * 
+         * Note that this node may have children, if a subtree was just added to the document.
+         */
+        newNode: CustomXmlNode;
+    }
+    
+    /**
+     * Provides information about the replaced node that raised the dataNodeReplaced event.
+     */
+    interface NodeReplacedEventArgs  {
+        /**
+         * Gets whether the replaced node was inserted as part of an undo or redo operation by the user.
+         */
+        isUndoRedo: boolean;
+        /**
+         * Gets the node that was just added to the CustomXMLPart object.
+         * 
+         * Note that this node may have children, if a subtree was just added to the document.
+         */
+        newNode: CustomXmlNode;
+        /**
+         * Gets the node which was just deleted (replaced) from the CustomXmlPart object.
+         * 
+         * Note that this node may have children, if a subtree is being removed from the document. Also, this node will be a "disconnected" node in that you can query down from the node, but you cannot query up the tree - the node appears to exist alone.
+         */
+        oldNode: CustomXmlNode;
+    }
+
     /**
      * Represents a collection of CustomXmlPart objects.
      *
@@ -1843,7 +2171,7 @@ declare namespace Office {
          * Available in Requirement set: CustomXmlParts
          *
          * @param id The GUID of the custom XML part, including opening and closing braces.
-         * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback..
+         * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback.
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
          */
         getByIdAsync(id: string, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
@@ -1928,7 +2256,7 @@ declare namespace Office {
          * @remarks
          * Hosts: Access, Excel, Word
          *
-         * You don't instantiate the Document object directly in your script. To call members of the Document object to interact with the current document or worksheet, use Office.context.document in your script.
+         * You don't instantiate the Document object directly in your script. To call members of the Document object to interact with the current document or worksheet, use `Office.context.document` in your script.
          */
         bindings: Bindings;
         /**
@@ -1969,8 +2297,8 @@ declare namespace Office {
          *
          * You can add multiple event handlers for the specified eventType as long as the name of each event handler function is unique.
          *
-         * @param eventType For a Document object event, the eventType parameter can be specified as Office.EventType.Document.SelectionChanged or Office.EventType.Document.ActiveViewChanged, or the corresponding text value of this enumeration.
-         * @param handler The event handler function to add, whose only parameter is of type DocumentSelectionChangedEventArgs. Required.
+         * @param eventType For a Document object event, the eventType parameter can be specified as `Office.EventType.Document.SelectionChanged` or `Office.EventType.Document.ActiveViewChanged`, or the corresponding text value of this enumeration.
+         * @param handler The event handler function to add, whose only parameter is of type {@link Office.DocumentSelectionChangedEventArgs}. Required.
          * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback.
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
          */
@@ -1985,7 +2313,7 @@ declare namespace Office {
          *
          * Can trigger an event when the view changes.
          *
-         * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback..
+         * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback.
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
         */
         getActiveViewAsync(options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
@@ -1999,15 +2327,15 @@ declare namespace Office {
          *
          * For add-ins running in Office host applications other than Office for iOS, the getFileAsync method supports getting files in slices of up to 4194304 bytes (4 MB). For add-ins running in Office for iOS apps, the getFileAsync method supports getting files in slices of up to 65536 (64 KB).
          *
-         * The fileType parameter can be specified by using the FileType enumeration or text values. But the possible values vary with the host:
+         * The fileType parameter can be specified by using the {@link Office.FileType} enumeration or text values. But the possible values vary with the host:
          *
-         * Excel Online, Win32, Mac, and iOS: Office.FileType.Compressed
+         * Excel Online, Win32, Mac, and iOS: `Office.FileType.Compressed`
          *
-         * PowerPoint on Windows desktop, Mac, and iPad, and PowerPoint Online: Office.FileType.Compressed, Office.FileType.Pdf
+         * PowerPoint on Windows desktop, Mac, and iPad, and PowerPoint Online: `Office.FileType.Compressed`, `Office.FileType.Pdf`
          *
-         * Word on Windows desktop, Word on Mac, and Word Online: Office.FileType.Compressed, Office.FileType.Pdf, Office.FileType.Text
+         * Word on Windows desktop, Word on Mac, and Word Online: `Office.FileType.Compressed`, `Office.FileType.Pdf`, `Office.FileType.Text`
          *
-         * Word on iPad: Office.FileType.Compressed, Office.FileType.Text
+         * Word on iPad: `Office.FileType.Compressed`, `Office.FileType.Text`
          *
          * @param fileType The format in which the file will be returned
          * @param options Provides options for setting the size of slices that the document will be divided into.
@@ -2022,7 +2350,7 @@ declare namespace Office {
          *
          * Available in Requirement set: not in a set
          *
-         * You get the file's URL with the url property ( asyncResult.value.url).
+         * You get the file's URL with the url property (`asyncResult.value.url`).
          *
          * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback.
          * @param callback A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
@@ -2035,23 +2363,50 @@ declare namespace Office {
          * Hosts: Access, Excel, PowerPoint, Project, Word
          *
          * Available in Requirement set: Selection
-         *
-         * The possible values for the coercionType parameter vary by the host:
-         *
-         * Excel, Excel Online, PowerPoint, PowerPoint Online, Word, and Word Online only: Office.CoercionType.Text (string)
-         *
-         * Excel, Word, and Word Online only: Office.CoercionType.Matrix (array of arrays)
-         *
-         * Access, Excel, Word, and Word Online only: Office.CoercionType.Table (TableData object)
-         *
-         * Word only: Office.CoercionType.Html
-         *
-         * Word and Word Online only: Office.CoercionType.Ooxml (Office Open XML)
-         *
-         * PowerPoint and PowerPoint Online only: Office.CoercionType.SlideRange
-         *
+         * 
+         * In the callback function that is passed to the getSelectedDataAsync method, you can use the properties of the AsyncResult object to return the following information.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Property</th>
+         *     <th>Use to...</th>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.value</td>
+         *     <td>Always returns undefined because there is no object or data to retrieve.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.status</td>
+         *     <td>Determine the success or failure of the operation.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.error</td>
+         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.asyncContext</td>
+         *     <td>A user-defined item of any type that is returned in the AsyncResult object without being altered.</td>
+         *   </tr>
+         * </table>
+         * 
          * @param coercionType The type of data structure to return.
+         * 
+         * The possible values for the {@link Office.CoercionType} parameter vary by the host:
+         *
+         * - Excel, Excel Online, PowerPoint, PowerPoint Online, Word, and Word Online only: `Office.CoercionType.Text` (string)
+         *
+         * - Excel, Word, and Word Online only: `Office.CoercionType.Matrix` (array of arrays)
+         *
+         * - Access, Excel, Word, and Word Online only: `Office.CoercionType.Table` (TableData object)
+         *
+         * - Word only: `Office.CoercionType.Html`
+         *
+         * - Word and Word Online only: `Office.CoercionType.Ooxml` (Office Open XML)
+         *
+         * - PowerPoint and PowerPoint Online only: `Office.CoercionType.SlideRange`
+         * 
          * @param options Provides options for customizing what data is returned and how it is formatted.
+         * 
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
          */
         getSelectedDataAsync(coercionType: CoercionType, options?: GetSelectedDataOptions, callback?: (result: AsyncResult) => void): void;
@@ -2088,7 +2443,7 @@ declare namespace Office {
          * Available in Requirement set: DocumentEvents
          *
          * @param eventType The event type. For document can be 'Document.SelectionChanged' or 'Document.ActiveViewChanged'.
-         * @param options Provides options to determine which event handler or handlers are removed.         *
+         * @param options Provides options to determine which event handler or handlers are removed.
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
          */
         removeHandlerAsync(eventType: EventType, options?: RemoveHandlerOptions, callback?: (result: AsyncResult) => void): void;
@@ -2099,24 +2454,89 @@ declare namespace Office {
          * Hosts: Access, Excel, PowerPoint, Project, Word, Word Online
          *
          * Available in Requirement set: Selection
+         * 
+         * **Application-specific behaviors**
+         * 
+         * The following application-specific actions apply when writing data to a selection.
+         * 
+         * - Word
+         * 
+         *   - If there is no selection and the insertion point is at a valid location, the specified `data` is inserted at the insertion point as follows:
+         * 
+         *     - If `data` is a string, the specified text is inserted.
+         * 
+         *     - If `data` is an array of arrays ("matrix") or a TableData object, a new Word table is inserted.
+         * 
+         *     - If `data` is HTML, the specified HTML is inserted. (Important: If any of the HTML you insert is invalid, Word won't raise an error. Word will insert as much of the HTML as it can and omits any invalid data).
+         * 
+         *     - If `data` is Office Open XML, the specified XML is inserted.
+         * 
+         *     - If `data` is a base64 encoded image stream, the specified image is inserted.
+         * 
+         *   - If there is a selection, it will be replaced with the specified `data` following the same rules as above.
+         * 
+         *   - Insert images: Inserted images are placed inline. The imageLeft and imageTop parameters are ignored. The image aspect ratio is always locked. If only one of the imageWidth and imageHeight parameter is given, the other value will be automatically scaled to keep the original aspect ratio.
+         * 
+         * - Excel
+         * 
+         *   - If a single cell is selected:
+         * 
+         *     - If `data` is a string, the specified text is inserted as the value of the current cell.
+         * 
+         *     - If `data` is an array of arrays ("matrix"), the specified set of rows and columns are inserted, if no other data in surrounding cells will be overwritten.
+         * 
+         *     - If `data` is a TableData object, a new Excel table with the specified set of rows and headers is inserted, if no other data in surrounding cells will be overwritten.
+         * 
+         *   - If multiple cells are selected and the shape does not match the shape of `data`, an error is returned.
+         * 
+         *   - If multiple cells are selected and the shape of the selection exactly matches the shape of `data`, the values of the selected cells are updated based on the values in `data`.
+         * 
+         *   - Insert images: Inserted images are floating. The position imageLeft and imageTop parameters are relative to currently selected cell(s). Negative imageLeft and imageTop values are allowed and possibly readjusted by Excel to position the image inside a worksheet. Image aspect ratio is locked unless both imageWidth and imageHeight parameters are provided. If only one of the imageWidth and imageHeight parameter is given, the other value will be automatically scaled to keep the original aspect ratio.
+         * 
+         *   - In all other cases, an error is returned.
+         * 
+         * - Excel Online
+         * 
+         *   - In addition to the behaviors described for Excel above, the following limits apply when writing data in Excel Online. 
+         * 
+         *     - The total number of cells you can write to a worksheet with the `data` parameter can't exceed 20,000 in a single call to this method.
+         * 
+         *     - The number of formatting groups passed to the `cellFormat` parameter can't exceed 100. A single formatting group consists of a set of formatting applied to a specified range of cells.
+         * 
+         * - PowerPoint
+         * 
+         *   - Inserted images are floating. The position imageLeft and imageTop parameters are optional but if provided, both should be present. If a single value is provided, it will be ignored. Negative imageLeft and imageTop values are allowed and can position an image outside of a slide. If no optional parameter is given and slide has a placeholder, the image will replace the placeholder in the slide. Image aspect ratio will be locked unless both imageWidth and imageHeight parameters are provided. If only one of the imageWidth and imageHeight parameter is given, the other value will be automatically scaled to keep the original aspect ratio.
          *
+         * @param data The data to be set. Either a string or  {@link Office.CoercionType} value, 2d array or TableData object.
+         * 
          * The possible CoercionTypes that can be used for the data parameter, or for the coercionType option, vary by host:
          *
-         * Office.CoercionType.Text: Excel, Word, PowerPoint
+         * - Office.CoercionType.Text: Excel, Word, PowerPoint
          *
-         * Office.CoercionType.Matrix: Excel, Word
+         * - Office.CoercionType.Matrix: Excel, Word
          *
-         * Office.CoercionType.Table: Access, Excel, Word
+         * - Office.CoercionType.Table: Access, Excel, Word
          *
-         * Office.CoercionType.Html: Word
+         * - Office.CoercionType.Html: Word
          *
-         * Office.CoercionType.Ooxml: Word
+         * - Office.CoercionType.Ooxml: Word
          *
-         * Office.CoercionType.Image: Excel, Word, PowerPoint
-         *
-         * @param data The data to be set. Either a string or CoercionType value, 2d array or TableData object.
+         * - Office.CoercionType.Image: Excel, Word, PowerPoint
+         * 
+         * If the value passed for `data` is:
+         * 
+         * - A string: Plain text or anything that can be coerced to a string will be inserted. 
+         * In Excel, you can also specify data as a valid formula to add that formula to the selected cell. For example, setting data to "=SUM(A1:A5)" will total the values in the specified range. However, when you set a formula on the bound cell, after doing so, you can't read the added formula (or any pre-existing formula) from the bound cell. If you call the Document.getSelectedDataAsync method on the selected cell to read its data, the method can return only the data displayed in the cell (the formula's result).
+         * 
+         * - An array of arrays ("matrix"): Tabular data without headers will be inserted. For example, to write data to three rows in two columns, you can pass an array like this: [["R1C1", "R1C2"], ["R2C1", "R2C2"], ["R3C1", "R3C2"]]. To write a single column of three rows, pass an array like this: [["R1C1"], ["R2C1"], ["R3C1"]]
+         * In Excel, you can also specify data as an array of arrays that contains valid formulas to add them to the selected cells. For example if no other data will be overwritten, setting data to [["=SUM(A1:A5)","=AVERAGE(A1:A5)"]] will add those two formulas to the selection. Just as when setting a formula on a single cell as "text", you can't read the added formulas (or any pre-existing formulas) after they have been set - you can only read the formulas' results.
+         * 
+         * - A TableData object: A table with headers will be inserted.
+         * In Excel, if you specify formulas in the TableData object you pass for the data parameter, you might not get the results you expect due to the "calculated columns" feature of Excel, which automatically duplicates formulas within a column. To work around this when you want to write `data` that contains formulas to a selected table, try specifying the data as an array of arrays (instead of a TableData object), and specify the coercionType as Microsoft.Office.Matrix or "matrix".
+         * 
          * @param options Provides options for how to insert data to the selection.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
+         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult. 
+         * The AsyncResult.value property always returns undefined because there is no object or data to retrieve.
          */
         setSelectedDataAsync(data: string | TableData | any[][], options?: SetSelectedDataOptions, callback?: (result: AsyncResult) => void): void;
         /**
@@ -2179,11 +2599,11 @@ declare namespace Office {
      */
     interface DocumentSelectionChangedEventArgs {
         /**
-         * Gets a Document object that represents the document that raised the SelectionChanged event.
+         * Gets an {@link Office.Document} object that represents the document that raised the SelectionChanged event.
          */
         document: Document;
         /**
-         * Get an EventType enumeration value that identifies the kind of event that was raised.
+         * Get an {@link Office.EventType} enumeration value that identifies the kind of event that was raised.
          */
         type: EventType;
     }
@@ -2213,41 +2633,78 @@ declare namespace Office {
         sliceCount: number;
         /**
          * Closes the document file.
+         * 
          * @remarks
-         * No more than two documents are allowed to be in memory; otherwise the Document.getFileAsync operation will fail. Use the File.closeAsync method to close the file when you are finished working with it.
-         *
+         * 
          * Hosts: PowerPoint, Word
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
-         * @remarks
-         * When the function you passed to the callback parameter executes, it receives an AsyncResult object that you can access from the callback function's only parameter.
-         * In the callback function passed to the closeAsync method, you can use the properties of the AsyncResult object to return the following information.
-         * |Property |Use to...|
-         * |---------|---------|
-         * |AsyncResult.value|Always returns undefined because there is no object or data to retrieve.|
-         * |AsyncResult.status|Determine the success or failure of the operation.|
-         * |AsyncResult.error|Access an Error object that provides error information if the operation failed.|
-         * |AsyncResult.asyncContext|A user-defined item of any type that is returned in the AsyncResult object without being altered.|
-         *
+         * 
          * Available in Requirement set: File
+         * 
+         * No more than two documents are allowed to be in memory; otherwise the Document.getFileAsync operation will fail. Use the File.closeAsync method to close the file when you are finished working with it.
+         * 
+         * In the callback function passed to the closeAsync method, you can use the properties of the AsyncResult object to return the following information.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Property</th>
+         *     <th>Use to...</th>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.value</td>
+         *     <td>Always returns undefined because there is no object or data to retrieve.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.status</td>
+         *     <td>Determine the success or failure of the operation.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.error</td>
+         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.asyncContext</td>
+         *     <td>A user-defined item of any type that is returned in the AsyncResult object without being altered.</td>
+         *   </tr>
+         * </table>
+         *
+         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult. When the function you passed to the callback parameter executes, it receives an AsyncResult object that you can access from the callback function's only parameter to return the following information.
          */
         closeAsync(callback?: (result: AsyncResult) => void): void;
         /**
          * Returns the specified slice.
+         * 
          * @remarks
          * Hosts: PowerPoint, Word
-         * @param sliceIndex Specifies the zero-based index of the slice to be retrieved. Required.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult
-         * @remarks
-         * When the function you passed to the callback parameter executes, it receives an AsyncResult object that you can access from the callback function's only parameter.
-         * In the callback function passed to the getSliceAsync method, you can use the properties of the AsyncResult object to return the following information.
-         * |Property |Use to...|
-         * |---------|---------|
-         * |AsyncResult.value|Access the Slice object.|
-         * |AsyncResult.status|Determine the success or failure of the operation.|
-         * |AsyncResult.error|Access an Error object that provides error information if the operation failed.|
-         * |AsyncResult.asyncContext|A user-defined item of any type that is returned in the AsyncResult object without being altered.|
-         *
+         * 
          * Available in Requirement set: File
+         * 
+         * In the callback function passed to the getSliceAsync method, you can use the properties of the AsyncResult object to return the following information.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Property</th>
+         *     <th>Use to...</th>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.value</td>
+         *     <td>Access the Slice object.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.status</td>
+         *     <td>Determine the success or failure of the operation.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.error</td>
+         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.asyncContext</td>
+         *     <td>A user-defined item of any type that is returned in the AsyncResult object without being altered.</td>
+         *   </tr>
+         * </table>
+         * 
+         * @param sliceIndex Specifies the zero-based index of the slice to be retrieved. Required.
+         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult. When the function you passed to the callback parameter executes, it receives an AsyncResult object that you can access from the callback function's only parameter to return the following information.
          */
         getSliceAsync(sliceIndex: number, callback?: (result: AsyncResult) => void): void;
     }
@@ -2258,15 +2715,15 @@ declare namespace Office {
         url: string
     }
     /**
-    * Represents a binding in two dimensions of rows and columns.
-    *
-    * @remarks
-         * Hosts: Excel, Word
-    *
-    * Available in Requirement set: MatrixBindings
-    *
-    * The MatrixBinding object inherits the id property, type property, getDataAsync method, and setDataAsync method from the Binding object.
-    */
+     * Represents a binding in two dimensions of rows and columns.
+     *
+     * @remarks
+     * Hosts: Excel, Word
+     *
+     * Available in Requirement set: MatrixBindings
+     *
+     * The MatrixBinding object inherits the id property, type property, getDataAsync method, and setDataAsync method from the Binding object.
+     */
     interface MatrixBinding extends Binding {
         /**
         * Gets the number of columns in the matrix data structure, as an integer value.
@@ -2317,16 +2774,30 @@ declare namespace Office {
          * @param eventType Specifies the type of event to add. Required.
          * @param handler The event handler function to add. Required.
          * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
-         * @remarks
-         * When the function you passed to the callback parameter executes, it receives an AsyncResult object that you can access from the callback function's only parameter.
-         * In the callback function passed to the addHandlerAsync method, you can use the properties of the AsyncResult object to return the following information.
-         * |Property |Use to...|
-         * |---------|---------|
-         * |AsyncResult.value|Always returns undefined because there is no data or object to retrieve when adding an event handler.|
-         * |AsyncResult.status|Determine the success or failure of the operation.|
-         * |AsyncResult.error|Access an Error object that provides error information if the operation failed.|
-         * |AsyncResult.asyncContext|A user-defined item of any type that is returned in the AsyncResult object without being altered.|
+         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult. When the function you passed to the callback parameter executes, it receives an AsyncResult object that you can access from the callback function's only parameter to return the following information.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Property</th>
+         *     <th>Use to...</th>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.value</td>
+         *     <td>Always returns undefined because there is no data or object to retrieve when adding an event handler.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.status</td>
+         *     <td>Determine the success or failure of the operation.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.error</td>
+         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.asyncContext</td>
+         *     <td>A user-defined item of any type that is returned in the AsyncResult object without being altered.</td>
+         *   </tr>
+         * </table>
          */
         addHandlerAsync(eventType: EventType, handler: any, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
         /**
@@ -2346,22 +2817,39 @@ declare namespace Office {
          *
          * @remarks
          * This method is useful in Word and PowerPoint coauthoring scenarios when multiple instances of the same add-in are working against the same document. Because each add-in is working against an in-memory copy of the settings loaded from the document at the time the user opened it, the settings values used by each user can get out of sync. This can happen whenever an instance of the add-in calls the Settings.saveAsync method to persist all of that user's settings to the document. Calling the refreshAsync method from the event handler for the settingsChanged event of the add-in will refresh the settings values for all users.
+         * 
          * The refreshAsync method can be called from add-ins created for Excel, but since it doesn't support coauthoring there is no reason to do so.
          *
+         * In the callback function passed to the refreshAsync method, you can use the properties of the AsyncResult object to return the following information.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Property</th>
+         *     <th>Use to...</th>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.value</td>
+         *     <td>Access a Settings object with the refreshed values.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.status</td>
+         *     <td>Determine the success or failure of the operation.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.error</td>
+         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.asyncContext</td>
+         *     <td>A user-defined item of any type that is returned in the AsyncResult object without being altered.</td>
+         *   </tr>
+         * </table>
+         * 
          * Hosts: Access, Excel, PowerPoint, Word
          *
          * Available in Requirement set: Settings
          *
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
-         * @remarks
-         * When the function you passed to the callback parameter executes, it receives an AsyncResult object that you can access from the callback function's only parameter.
-         * In the callback function passed to the refreshAsync method, you can use the properties of the AsyncResult object to return the following information.
-         * |Property |Use to...|
-         * |---------|---------|
-         * |AsyncResult.value|Access a Settings object with the refreshed values.|
-         * |AsyncResult.status|Determine the success or failure of the operation.|
-         * |AsyncResult.error|Access an Error object that provides error information if the operation failed.|
-         * |AsyncResult.asyncContext|A user-defined item of any type that is returned in the AsyncResult object without being altered.|
+         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult. When the function you passed to the callback parameter executes, it receives an AsyncResult object that you can access from the callback function's only parameter.
          */
         refreshAsync(callback?: (result: AsyncResult) => void): void;
         /**
@@ -2402,22 +2890,35 @@ declare namespace Office {
          * @remarks
          * Any settings previously saved by an add-in are loaded when it is initialized, so during the lifetime of the session you can just use the set and get methods to work with the in-memory copy of the settings property bag. When you want to persist the settings so that they are available the next time the add-in is used, use the saveAsync method.
          *
-         * Note:
-         * The saveAsync method persists the in-memory settings property bag into the document file; however, the changes to the document file itself are saved only when the user (or AutoRecover setting) saves the document to the file system.
-         * The refreshAsync method is only useful in coauthoring scenarios (which are only supported in Word) when other instances of the same add-in might change the settings and those changes should be made available to all instances.
-         *
+         * Note: The saveAsync method persists the in-memory settings property bag into the document file; however, the changes to the document file itself are saved only when the user (or AutoRecover setting) saves the document to the file system. The refreshAsync method is only useful in coauthoring scenarios (which are only supported in Word) when other instances of the same add-in might change the settings and those changes should be made available to all instances.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Property</th>
+         *     <th>Use to...</th>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.value</td>
+         *     <td>Always returns undefined because there is no object or data to retrieve.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.status</td>
+         *     <td>Determine the success or failure of the operation.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.error</td>
+         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.asyncContext</td>
+         *     <td>A user-defined item of any type that is returned in the AsyncResult object without being altered.</td>
+         *   </tr>
+         * </table>
+         * 
          * Hosts: Access, Excel, PowerPoint, Word
+         * 
          * @param options Provides options for saving settings.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult. Optional.
-         * @remarks
-         * When the function you passed to the callback parameter executes, it receives an AsyncResult object that you can access from the callback function's only parameter.
-         * In the callback function passed to the saveAsync method, you can use the properties of the AsyncResult object to return the following information.
-         * |Property |Use to...|
-         * |---------|---------|
-         * |AsyncResult.value|Always returns undefined because there is no object or data to retrieve.|
-         * |AsyncResult.status|Determine the success or failure of the operation.|
-         * |AsyncResult.error|Access an Error object that provides error information if the operation failed.|
-         * |AsyncResult.asyncContext|A user-defined item of any type that is returned in the AsyncResult object without being altered.|
+         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult. When the function you passed to the callback parameter executes, it receives an AsyncResult object that you can access from the callback function's only parameter to return the following information.
          */
         saveAsync(options?: SaveSettingsOptions, callback?: (result: AsyncResult) => void): void;
         /**
@@ -2449,7 +2950,7 @@ declare namespace Office {
      */
     interface Slice {
         /**
-         * Gets the raw data of the file slice in Office.FileType.Text ("text") or Office.FileType.Compressed ("compressed") format as specified by the fileType parameter of the call to the Document.getFileAsync method.
+         * Gets the raw data of the file slice in `Office.FileType.Text` ("text") or `Office.FileType.Compressed` ("compressed") format as specified by the fileType parameter of the call to the Document.getFileAsync method.
          *
          * @remarks
          * Files in the "compressed" format will return a byte array that can be transformed to a base64-encoded string if required.
@@ -2600,7 +3101,7 @@ declare namespace Office {
          *
          * Available in Requirement set: Not in a set
          *
-         * See [Format tables in add-ins for Excel](https://docs.microsoft.com/en-us/office/dev/add-ins/excel/excel-add-ins-tables#format-a-table) for more information.
+         * See {@link https://docs.microsoft.com/en-us/office/dev/add-ins/excel/excel-add-ins-tables#format-a-table | Format tables in add-ins for Excel} for more information.
          *
          * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback.
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
@@ -2621,18 +3122,117 @@ declare namespace Office {
          * Hosts: Excel
          *
          * Available in Requirement set: Not in a set
+         * 
+         * **Specifying the cellFormat parameter**
+         * 
+         * Use the cellFormat parameter to set or change cell formatting values, such as width, height, font, background, alignment, and so on. 
+         * The value you pass as the cellFormat parameter is an array that contains a list of one or more JavaScript objects that specify which cells to target (`cells:`) and the formats (`format:`) to apply to them.
+         * 
+         * Each JavaScript object in the cellFormat array has this form: `{cells:{ cell_range }, format:{ format_definition }}`
+         * 
+         * The `cells:` property specifies the range you want format using one of the following values:
+         * 
+         * **Supported ranges in cells property**
+         * 
+         * <table>
+         *   <tr>
+         *     <th>cells range settings</th>
+         *     <th>Description</th>
+         *   </tr>
+         *   <tr>
+         *     <td>{row: n}</td>
+         *     <td>Specifies the range that is the zero-based nth row of data in the table.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>{column: n}</td>
+         *     <td>Specifies the range that is the zero-based nth column of data in the table.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>{row: i, column: j}</td>
+         *     <td>Specifies the single cell that is the ith row and jth column of the table.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>Office.Table.All</td>
+         *     <td>Specifies the entire table, including column headers, data, and totals (if any).</td>
+         *   </tr>
+         *   <tr>
+         *     <td>Office.Table.Data</td>
+         *     <td>Specifies only the data in the table (no headers and totals).</td>
+         *   </tr>
+         *   <tr>
+         *     <td>Office.Table.Headers</td>
+         *     <td><Specifies only the header row./td>
+         *   </tr>
+         * <table>
+         * 
+         * The `format:` property specifies values that correspond to a subset of the settings available in the Format Cells dialog box in Excel (Right-click > Format Cells or Home > Format > Format Cells).
+         * 
+         * You specify the value of the `format:` property as a list of one or more property name - value pairs in a JavaScript object literal. The property name specifies the name of the formatting property to set, and value specifies the property value. 
+         * You can specify multiple values for a given format, such as both a font's color and size. Here's three `format:` property value examples:
+         * 
+         * `//Set cells: font color to green and size to 15 points.`
+         * 
+         * `format: {fontColor : "green", fontSize : 15}`
+         * 
+         * `//Set cells: border to dotted blue.`
+         * 
+         * `format: {borderStyle: "dotted", borderColor: "blue"}`
+         * 
+         * `//Set cells: background to red and alignment to centered.`
+         * 
+         * `format: {backgroundColor: "red", alignHorizontal: "center"}`
+         * 
+         * You can specify number formats by specifying the number formatting "code" string in the `numberFormat:` property. 
+         * The number format strings you can specify correspond to those you can set in Excel using the Custom category on the Number tab of the Format Cells dialog box. 
+         * This example shows how to format a number as a percentage with two decimal places:
+         * 
+         * `format: {numberFormat:"0.00%"}`
+         * 
+         * For more detail, see how to {@link create a custom number format | https://support.office.com/article/create-or-delete-a-custom-number-format-78f2a361-936b-4c03-8772-09fab54be7f4}.
+         * 
+         * To set formatting on tables when writing data, use the tableOptions and cellFormat optional parameters of the `Document.setSelectedDataAsync` or `TableBinding.setDataAsync` methods.
+         * 
+         * Setting formatting with the optional parameters of the `Document.setSelectedDataAsync` and `TableBinding.setDataAsync` methods only works to set formatting when writing data the first time. 
+         * To make formatting changes after writing data, use the following methods:
+         * 
+         *  - To update cell formatting, such as font color and style, use the `TableBinding.setFormatsAsync` method (this method).
+         * 
+         *  - To update table options, such as banded rows and filter buttons, use the `TableBinding.setTableOptions` method.
+         * 
+         *  - To clear formatting, use the `TableBinding.clearFormats` method.
+         * 
+         * For more details and examples, see {@link How to format tables in add-ins for Excel | https://docs.microsoft.com/office/dev/add-ins/excel/excel-add-ins-tables#format-a-table}.
+         * 
+         * In the callback function passed to the goToByIdAsync method, you can use the properties of the AsyncResult object to return the following information.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Property</th>
+         *     <th>Use to...</th>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.value</td>
+         *     <td>Always returns undefined because there is no data or object to retrieve when setting formats.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.status</td>
+         *     <td>Determine the success or failure of the operation.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.error</td>
+         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.asyncContext</td>
+         *     <td>A user-defined item of any type that is returned in the AsyncResult object without being altered.</td>
+         *   </tr>
+         * </table>
          *
-         * @param formatsInfo Array elements are themselves three-element arrays:[target, type, formats]
-         *
-         *       target: The identifier of the item to format. String.
-         *
-         *       type: The kind of item to format. String.
-         *
-         *       formats: An object literal containing a list of property name-value pairs that define the formatting to apply.
+         * @param cellFormat An array that contains one or more JavaScript objects that specify which cells to target and the formatting to apply to them.
          * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback.
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
          */
-        setFormatsAsync(formatsInfo?: any[], options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+        setFormatsAsync(cellFormat?: any[], options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
         /**
          * Updates table formatting options on the bound table.
          *
@@ -2640,15 +3240,42 @@ declare namespace Office {
          * Hosts: Excel
          *
          * Available in Requirement set: Not in a set
+         * 
+         * In the callback function passed to the goToByIdAsync method, you can use the properties of the AsyncResult object to return the following information.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Property</th>
+         *     <th>Use to...</th>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.value</td>
+         *     <td>Always returns undefined because there is no data or object to retrieve when setting formats.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.status</td>
+         *     <td>Determine the success or failure of the operation.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.error</td>
+         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>AsyncResult.asyncContext</td>
+         *     <td>A user-defined item of any type that is returned in the AsyncResult object without being altered.</td>
+         *   </tr>
+         * </table>
          *
          * @param tableOptions An object literal containing a list of property name-value pairs that define the table options to apply.
          * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult.
+         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type AsyncResult. You can use the properties of the AsyncResult object to return the following information.
+         * 
+
          */
         setTableOptionsAsync(tableOptions: any, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
     }
     /**
-     * Represents the data in a table or a TableBinding.
+     * Represents the data in a table or a {@link Office.TableBinding}.
      *
      * @remarks
      * Hosts: Excel, Word
@@ -2660,6 +3287,7 @@ declare namespace Office {
         constructor();
         /**
          * Gets or sets the headers of the table.
+         * 
          * @remarks
          * To specify headers, you must specify an array of arrays that corresponds to the structure of the table. For example, to specify headers for a two-column table you would set the header property to [['header1', 'header2']].
          *
@@ -2676,6 +3304,7 @@ declare namespace Office {
         headers: any[];
         /**
          * Gets or sets the rows in the table. Returns an array of arrays that contains the data in the table. Returns an empty array ``, if there are no rows.
+         * 
          * @remarks
          * To specify rows, you must specify an array of arrays that corresponds to the structure of the table. For example, to specify two rows of string values in a two-column table you would set the rows property to [['a', 'b'], ['c', 'd']].
          *
@@ -2692,7 +3321,7 @@ declare namespace Office {
         rows: any[][];
     }
     /**
-     * Specifies enumerated values for the cells: property in the cellFormat parameter of [table formatting methods](https://dev.office.com/reference/docs/excel/format-tables-in-add-ins-for-excel.htm).
+     * Specifies enumerated values for the cells: property in the cellFormat parameter of {@link https://docs.microsoft.com/en-us/office/dev/add-ins/excel/excel-add-ins-tables#format-a-table | table formatting methods}.
      *
      * @remarks
      * Hosts: Excel
@@ -2719,7 +3348,7 @@ declare namespace Office {
     *
     * Available in Requirement set: TextBindings
     *
-    * The TextBinding object inherits the id property, type property, getDataAsync method, and setDataAsync method from the Binding object. It does not implement any additional properties or methods of its own.
+    * The TextBinding object inherits the id property, type property, getDataAsync method, and setDataAsync method from the {@link Office.Binding} object. It does not implement any additional properties or methods of its own.
     */
     interface TextBinding extends Binding { }
     /**
@@ -2787,7 +3416,7 @@ declare namespace Office {
      * @remarks
      * A ProjectResourceFields constant can be used as a parameter of the getResourceFieldAsync method.
      *
-     * For more information about working with fields in Project, see [Available fields](https://support.office.com/article/Available-fields-reference-615a4563-1cc3-40f4-b66f-1b17e793a460) reference. In Project Help, search for Available fields.
+     * For more information about working with fields in Project, see {@link https://support.office.com/article/Available-fields-reference-615a4563-1cc3-40f4-b66f-1b17e793a460 | Available fields} reference. In Project Help, search for Available fields.
      */
     enum ProjectResourceFields {
         /**
@@ -3597,7 +4226,7 @@ declare namespace Office {
      * @remarks
      * A ProjectTaskFields constant can be used as a parameter of the getTaskFieldAsync method.
      *
-     * For more information about working with fields in Project, see the [Available fields](https://support.office.com/article/Available-fields-reference-615a4563-1cc3-40f4-b66f-1b17e793a460) reference. In Project Help, search for Available fields.
+     * For more information about working with fields in Project, see the {@link https://support.office.com/article/Available-fields-reference-615a4563-1cc3-40f4-b66f-1b17e793a460 | Available fields} reference. In Project Help, search for Available fields.
      *
      * Hosts: Project
      */
@@ -4832,15 +5461,15 @@ declare namespace Office {
             /**
              * The attachment is a file
              */
-            File,
+            File = "file",
             /**
              * The attachment is an Exchange item
              */
-            Item,
+            Item = "item",
             /**
              * The attachment is stored in a cloud location, such as OneDrive. The id property of the attachment contains a URL to the file.
              */
-            Cloud
+            Cloud = "cloud"
         }
         /**
          * Specifies the day of week or type of day.
@@ -4849,6 +5478,8 @@ declare namespace Office {
          *
          * @remarks
          * Applicable Outlook mode: Compose or read
+         * 
+         * @beta
          */
         enum Days {
             /**
@@ -4904,31 +5535,31 @@ declare namespace Office {
             /**
              * Specifies that the entity is a meeting suggestion.
              */
-            MeetingSuggestion,
+            MeetingSuggestion = "meetingSuggestion",
             /**
              * Specifies that the entity is a task suggestion.
              */
-            TaskSuggestion,
+            TaskSuggestion = "taskSuggestion",
             /**
              * Specifies that the entity is a postal address.
              */
-            Address,
+            Address = "address",
             /**
              * Specifies that the entity is an SMTP email address.
              */
-            EmailAddress,
+            EmailAddress = "emailAddress",
             /**
              * Specifies that the entity is an Internet URL.
              */
-            Url,
+            Url = "url",
             /**
              * Specifies that the entity is a US phone number.
              */
-            PhoneNumber,
+            PhoneNumber = "phoneNumber",
             /**
              * Specifies that the entity is a contact.
              */
-            Contact
+            Contact = "contact"
         }
         /**
          * Specifies the notification message type for an appointment or message.
@@ -4942,15 +5573,15 @@ declare namespace Office {
             /**
              * The notificationMessage is a progress indicator.
              */
-            ProgressIndicator,
+            ProgressIndicator = "progressIndicator",
             /**
              * The notificationMessage is an informational message.
              */
-            InformationalMessage,
+            InformationalMessage = "informationalMessage",
             /**
              * The notificationMessage is an error message.
              */
-            ErrorMessage
+            ErrorMessage = "errorMessage"
         }
         /**
          * Specifies an item's type.
@@ -4964,11 +5595,11 @@ declare namespace Office {
             /**
              * An email, meeting request, meeting response, or meeting cancellation.
              */
-            Message,
+            Message = "message",
             /**
              * An appointment item.
              */
-            Appointment
+            Appointment = "appointment"
         }
         /**
          * Specifies the month.
@@ -4977,6 +5608,8 @@ declare namespace Office {
          *
          * @remarks
          * Applicable Outlook mode: Compose or read
+         * 
+         * @beta
          */
         enum Month {
             /**
@@ -5040,19 +5673,19 @@ declare namespace Office {
             /**
              * Specifies that the recipient is a distribution list containing a list of email addresses.
              */
-            DistributionList,
+            DistributionList = "distributionList",
             /**
              * Specifies that the recipient is an SMTP email address that is on the Exchange server.
              */
-            User,
+            User = "user",
             /**
              * Specifies that the recipient is an SMTP email address that is not on the Exchange server.
              */
-            ExternalUser,
+            ExternalUser = "externalUser",
             /**
              * Specifies that the recipient is not one of the other recipient types.
              */
-            Other
+            Other = "other"
         }
         /**
          * Specifies the time zone applied to the recurrence.
@@ -5061,6 +5694,8 @@ declare namespace Office {
          *
          * @remarks
          * Applicable Outlook mode: Compose or read
+         * 
+         * @beta
          */
         enum RecurrenceTimeZone {
             /**
@@ -5617,6 +6252,8 @@ declare namespace Office {
          *
          * @remarks
          * Applicable Outlook mode: Compose or read
+         * 
+         * @beta
          */
         enum RecurrenceType {
             /**
@@ -5652,23 +6289,23 @@ declare namespace Office {
             /**
              * There has been no response from the attendee.
              */
-            None,
+            None = "none",
             /**
              * The attendee is the meeting organizer.
              */
-            Organizer,
+            Organizer = "organizer",
             /**
              * The meeting request was tentatively accepted by the attendee.
              */
-            Tentative,
+            Tentative = "tentative",
             /**
              * The meeting request was accepted by the attendee.
              */
-            Accepted,
+            Accepted = "accepted",
             /**
              * The meeting request was declined by the attendee.
              */
-            Declined
+            Declined = "declined"
         }
         /**
          * Specifies the version of the REST API that corresponds to a REST-formatted item ID.
@@ -5682,15 +6319,15 @@ declare namespace Office {
             /**
              * Version 1.0.
              */
-            v1_0,
+            v1_0 = "v1.0",
             /**
              * Version 2.0.
              */
-            v2_0,
+            v2_0 = "v2.0",
             /**
              * Beta.
              */
-            Beta
+            Beta = "beta"
         }
         /**
          * Specifies the week of the month.
@@ -5699,6 +6336,8 @@ declare namespace Office {
          *
          * @remarks
          * Applicable Outlook mode: Compose or read
+         * 
+         * @beta
          */
         enum WeekNumber {
             /**
@@ -5723,9 +6362,6 @@ declare namespace Office {
             Last = "last"
         }
     }
-    interface AsyncContextOptions {
-        asyncContext?: any;
-    }
     interface CoercionTypeOptions {
         coercionType?: CoercionType;
     }
@@ -5747,7 +6383,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Read
      */
@@ -5783,7 +6419,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.1]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Compose or read
      */
@@ -5798,10 +6434,14 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
-         *
+         * 
+         * In addition to the main signature, this method also has this signature:
+         * 
+         * `getAsync(coercionType: CoercionType, callback: (result: AsyncResult) => void): void;`
+         * 
          * @param coercionType The format for the returned body.
          * @param options Optional. An object literal that contains one or more of the following properties:
          *        asyncContext: Developers can provide any object they wish to access in the callback method.
@@ -5818,7 +6458,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -5833,7 +6473,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -5847,14 +6487,24 @@ declare namespace Office {
          *
          * The prependAsync method inserts the specified string at the beginning of the item body. After insertion, the cursor is returned to its original place, relative to the inserted content.
          *
-         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to LPNoLP.
+         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to "LPNoLP" (please see the Examples section for a sample).
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         * 
          * Applicable Outlook mode: Compose
+         * 
          * Errors: DataExceedsMaximumSize - The data parameter is longer than 1,000,000 characters.
+         * 
+         * In addition to the main signature, this method also has these signatures:
+         * 
+         * `prependAsync(data: string, options: AsyncContextOptions & CoercionTypeOptions): void;`
+         * 
+         * `prependAsync(data: string, callback: (result: AsyncResult) => void): void;`
+         * 
+         * `prependAsync(data: string): void;`
          *
          * @param data The string to be inserted at the beginning of the body. The string is limited to 1,000,000 characters.
          * @param options Optional. An object literal that contains one or more of the following properties.
@@ -5868,13 +6518,15 @@ declare namespace Office {
          *
          * The prependAsync method inserts the specified string at the beginning of the item body. After insertion, the cursor is returned to its original place, relative to the inserted content.
          *
-         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to LPNoLP.
+         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to "LPNoLP" (please see the Examples section for a sample).
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         * 
          * Applicable Outlook mode: Compose
+         * 
          * Errors: DataExceedsMaximumSize - The data parameter is longer than 1,000,000 characters.
          *
          * @param data The string to be inserted at the beginning of the body. The string is limited to 1,000,000 characters.
@@ -5888,12 +6540,12 @@ declare namespace Office {
          *
          * The prependAsync method inserts the specified string at the beginning of the item body. After insertion, the cursor is returned to its original place, relative to the inserted content.
          *
-         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to LPNoLP.
+         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to "LPNoLP" (please see the Examples section for a sample).
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          * Applicable Outlook mode: Compose
          * Errors: DataExceedsMaximumSize - The data parameter is longer than 1,000,000 characters.
          *
@@ -5906,12 +6558,12 @@ declare namespace Office {
          *
          * The prependAsync method inserts the specified string at the beginning of the item body. After insertion, the cursor is returned to its original place, relative to the inserted content.
          *
-         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to LPNoLP.
+         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to "LPNoLP" (please see the Examples section for a sample).
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          * Applicable Outlook mode: Compose
          * Errors: DataExceedsMaximumSize - The data parameter is longer than 1,000,000 characters.
          *
@@ -5923,18 +6575,26 @@ declare namespace Office {
          *
          * When working with HTML-formatted bodies, it is important to note that the Body.getAsync and Body.setAsync methods are not idempotent. The value returned from the getAsync method will not necessarily be exactly the same as the value that was passed in the setAsync method previously. The client may modify the value passed to setAsync in order to make it render efficiently with its rendering engine.
          *
-         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to LPNoLP.
+         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to "LPNoLP" (please see the Examples section for a sample).
          *
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
          * Errors: DataExceedsMaximumSize - The data parameter is longer than 1,000,000 characters.
          *
          * InvalidFormatError - The options.coercionType parameter is set to Office.CoercionType.Html and the message body is in plain text.
+         * 
+         * In addition to the main signature, this method also has these signatures:
+         * 
+         * `setAsync(data: string, options: AsyncContextOptions & CoercionTypeOptions): void;`
+         * 
+         * `setAsync(data: string, callback: (result: AsyncResult) => void): void;`
+         * 
+         * `setAsync(data: string): void;`
          *
          * @param data The string that will replace the existing body. The string is limited to 1,000,000 characters.
          * @param options Optional. An object literal that contains one or more of the following properties.
@@ -5948,12 +6608,12 @@ declare namespace Office {
          *
          * When working with HTML-formatted bodies, it is important to note that the Body.getAsync and Body.setAsync methods are not idempotent. The value returned from the getAsync method will not necessarily be exactly the same as the value that was passed in the setAsync method previously. The client may modify the value passed to setAsync in order to make it render efficiently with its rendering engine.
          *
-         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to LPNoLP.
+         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to "LPNoLP" (please see the Examples section for a sample).
          *
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -5972,12 +6632,12 @@ declare namespace Office {
          *
          * When working with HTML-formatted bodies, it is important to note that the Body.getAsync and Body.setAsync methods are not idempotent. The value returned from the getAsync method will not necessarily be exactly the same as the value that was passed in the setAsync method previously. The client may modify the value passed to setAsync in order to make it render efficiently with its rendering engine.
          *
-         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to LPNoLP.
+         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to "LPNoLP" (please see the Examples section for a sample).
          *
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -5994,12 +6654,12 @@ declare namespace Office {
          *
          * When working with HTML-formatted bodies, it is important to note that the Body.getAsync and Body.setAsync methods are not idempotent. The value returned from the getAsync method will not necessarily be exactly the same as the value that was passed in the setAsync method previously. The client may modify the value passed to setAsync in order to make it render efficiently with its rendering engine.
          *
-         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to LPNoLP.
+         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to "LPNoLP" (please see the Examples section for a sample).
          *
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -6016,19 +6676,27 @@ declare namespace Office {
          *
          * The setSelectedDataAsync method inserts the specified string at the cursor location in the body of the item, or, if text is selected in the editor, it replaces the selected text. If the cursor was never in the body of the item, or if the body of the item lost focus in the UI, the string will be inserted at the top of the body content. After insertion, the cursor is placed at the end of the inserted content.
          *
-         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to LPNoLP.
+         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to "LPNoLP" (please see the Examples section for a sample).
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
          * Errors: DataExceedsMaximumSize - The data parameter is longer than 1,000,000 characters.
          *
          * InvalidFormatError - The options.coercionType parameter is set to Office.CoercionType.Html and the message body is in plain text.
-         *
+         * 
+         * In addition to the main signature, this method also has these signatures:
+         * 
+         * `setSelectedDataAsync(data: string, options: AsyncContextOptions & CoercionTypeOptions): void;`
+         * 
+         * `setSelectedDataAsync(data: string, callback: (result: AsyncResult) => void): void;`
+         * 
+         * `setSelectedDataAsync(data: string): void;`
+         *         
          * @param data The string that will replace the existing body. The string is limited to 1,000,000 characters.
          * @param options Optional. An object literal that contains one or more of the following properties.
          *        asyncContext: Developers can provide any object they wish to access in the callback method.
@@ -6041,12 +6709,12 @@ declare namespace Office {
          *
          * The setSelectedDataAsync method inserts the specified string at the cursor location in the body of the item, or, if text is selected in the editor, it replaces the selected text. If the cursor was never in the body of the item, or if the body of the item lost focus in the UI, the string will be inserted at the top of the body content. After insertion, the cursor is placed at the end of the inserted content.
          *
-         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to LPNoLP.
+         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to "LPNoLP" (please see the Examples section for a sample).
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -6065,12 +6733,12 @@ declare namespace Office {
          *
          * The setSelectedDataAsync method inserts the specified string at the cursor location in the body of the item, or, if text is selected in the editor, it replaces the selected text. If the cursor was never in the body of the item, or if the body of the item lost focus in the UI, the string will be inserted at the top of the body content. After insertion, the cursor is placed at the end of the inserted content.
          *
-         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to LPNoLP.
+         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to "LPNoLP" (please see the Examples section for a sample).
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -6087,12 +6755,12 @@ declare namespace Office {
          *
          * The setSelectedDataAsync method inserts the specified string at the cursor location in the body of the item, or, if text is selected in the editor, it replaces the selected text. If the cursor was never in the body of the item, or if the body of the item lost focus in the UI, the string will be inserted at the top of the body content. After insertion, the cursor is placed at the end of the inserted content.
          *
-         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to LPNoLP.
+         * When including links in HTML markup, you can disable online link preview by setting the id attribute on the anchor (<a>) to "LPNoLP" (please see the Examples section for a sample).
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -6107,12 +6775,12 @@ declare namespace Office {
     /**
      * Represents a contact stored on the server. Read mode only.
      *
-     * The list of contacts associated with an email message or appointment is returned in the contacts property of the Entities object that is returned by the getEntities or getEntitiesByType method of the active item.
+     * The list of contacts associated with an email message or appointment is returned in the contacts property of the {@link Office.Entities} object that is returned by the getEntities or getEntitiesByType method of the active item.
      *
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: Restricted
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
      *
      * Applicable Outlook mode: Read
      */
@@ -6150,7 +6818,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Compose or read
      */
@@ -6163,7 +6831,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -6178,7 +6846,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -6195,7 +6863,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -6213,7 +6881,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -6225,7 +6893,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Compose or read
      */
@@ -6238,7 +6906,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -6251,7 +6919,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -6274,7 +6942,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -6286,7 +6954,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Compose or read
      */
@@ -6314,7 +6982,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Read
      */
@@ -6346,7 +7014,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Read
      */
@@ -6387,9 +7055,11 @@ declare namespace Office {
      * [Api set: Mailbox Preview]
      * 
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      * 
      * Applicable Outlook mode: Compose
+     * 
+     * @beta
      */
     export interface From {
         /**
@@ -6397,14 +7067,18 @@ declare namespace Office {
          * 
          * The getAsync method starts an asynchronous call to the Exchange server to get the from value of a message.
          * 
-         * The from value of the item is provided as an EmailAddressDetails in the asyncResult.value property.
+         * The from value of the item is provided as an {@link Office.EmailAddressDetails} in the asyncResult.value property.
          * 
          * [Api set: Mailbox Preview]
          * 
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          * 
          * Applicable Outlook mode: Compose
+         * 
+         * In addition to this signature, the method also has the following signature:
+         * 
+         * `getAsync(callback?: (result: AsyncResult) => void): void;`
          * 
          * @param options An object literal that contains one or more of the following properties.
          *        asyncContext: Developers can provide any object they wish to access in the callback method.
@@ -6422,7 +7096,7 @@ declare namespace Office {
          * 
          * @remarks
          * 
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          * 
          * Applicable Outlook mode: Compose
          * 
@@ -6432,13 +7106,158 @@ declare namespace Office {
     }
 
     /**
-     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of Office.context.mailbox.item. Refer to the [Object Model pages for more information](https://review.docs.microsoft.com/en-us/javascript/office/objectmodel/preview-requirement-set/office-item?branch=AlexJ-OMPreservation).
+     * The subclass of {@link Office.Item} dealing with apppointments.
+     * 
+     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of Office.context.mailbox.item. Refer to the Object Model pages for more information.
      */
     interface Appointment extends Item {
+    }
+    /**
+     * The appointment organizer mode of {@link Office.Item | Office.context.mailbox.item}.
+     * 
+     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of `Office.context.mailbox.item`. Refer to the Object Model pages for more information.
+     */
+    interface AppointmentCompose extends Appointment, ItemCompose {
         /**
-         * Gets or sets the recurrence pattern of an appointment. Gets the recurrence pattern of a meeting request. Read and compose modes for appointment items. Read mode for meeting request items.
+         * Gets or sets the date and time that the appointment is to end.
+         *
+         * The end property is an {@link Office.Time} object expressed as a Coordinated Universal Time (UTC) date and time value. You can use the convertToLocalClientTime method to convert the end property value to the client's local date and time.
+         *
+         * When you use the Time.setAsync method to set the end time, you should use the convertToUtcClientTime method to convert the local time on the client to UTC for the server.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         */
+        end: Time;
+        /**
+         * Gets or sets the {@link Office.Location} of an appointment. The location property returns a Location object that provides methods that are used to get and set the location of the appointment.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         */
+        location: Location;
+        /**
+         * Provides access to the optional attendees of an event. The type of object and level of access depends on the mode of the current item. The optionalAttendees property returns an {@link Office.Recipients} object that provides methods to get or update the optional attendees for a meeting.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         */
+        optionalAttendees: Recipients;
+        /**
+         * Provides access to the required attendees of an event. The type of object and level of access depends on the mode of the current item. The requiredAttendees property returns an {@link Office.Recipients} object that provides methods to get or update the required attendees for a meeting.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         */
+        requiredAttendees: Recipients;
+        /**
+         * Gets or sets the date and time that the appointment is to begin.
+         *
+         * The start property is an {@link Office.Time} object expressed as a Coordinated Universal Time (UTC) date and time value. You can use the convertToLocalClientTime method to convert the value to the client's local date and time.
+         *
+         * When you use the Time.setAsync method to set the start time, you should use the convertToUtcClientTime method to convert the local time on the client to UTC for the server.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         */
+        start: Time;
+
+        // Repeated Item fields //
+
+         /**
+         * Gets an object that provides methods for manipulating the body of an item.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         */
+        body: Body;
+        /**
+         * Gets the date and time that an item was created.  Read mode only.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         */
+        dateTimeCreated: Date;
+        /**
+         * Gets the date and time that an item was last modified. Read mode only.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * Note: This member is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         */
+        dateTimeModifed: Date;
+        /**
+         * Gets the type of item that an instance represents.
+         *
+         * The itemType property returns one of the ItemType enumeration values, indicating whether the item object instance is a message or an appointment.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         */
+        itemType: Office.MailboxEnums.ItemType;
+        /**
+         * Gets the notification messages for an item.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         */
+        notificationMessages: NotificationMessages;
+
+        /**
+         * Gets or sets the recurrence pattern of an appointment.
          * 
-         * The recurrence property returns a recurrence object for recurring appointments or meetings requests if an item is a series or an instance in a series. null is returned for single appointments and meeting requests of single appointments. undefined is returned for messages that are not meeting requests.
+         * The recurrence property returns a recurrence object for recurring appointments or meetings requests if an item is a series or an instance in a series. null is returned for single appointments and meeting requests of single appointments.
          * 
          * Note: Meeting requests have an itemClass value of IPM.Schedule.Meeting.Request.
          * 
@@ -6448,9 +7267,11 @@ declare namespace Office {
          * 
          * @remarks
          * 
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          * 
-         * Applicable Outlook mode: Compose or read
+         * Applicable Outlook mode: Appointment Organizer
+         * 
+         * @beta
          */
         recurrence: Recurrence;
 
@@ -6459,7 +7280,7 @@ declare namespace Office {
          * 
          * In OWA and Outlook, the seriesId returns the Exchange Web Services (EWS) ID of the parent (series) item that this item belongs to. However, in iOS and Android, the seriesId returns the REST ID of the parent item.
          * 
-         * Note: The identifier returned by the seriesId property is the same as the Exchange Web Services item identifier. The seriesId property is not identical to the Outlook IDs used by the Outlook REST API. Before making REST API calls using this value, it should be converted using Office.context.mailbox.convertToRestId. For more details, see [Use the Outlook REST APIs from an Outlook add-in](https://docs.microsoft.com/outlook/add-ins/use-rest-api).
+         * Note: The identifier returned by the seriesId property is the same as the Exchange Web Services item identifier. The seriesId property is not identical to the Outlook IDs used by the Outlook REST API. Before making REST API calls using this value, it should be converted using Office.context.mailbox.convertToRestId. For more details, see {@link https://docs.microsoft.com/outlook/add-ins/use-rest-api | Use the Outlook REST APIs from an Outlook add-in}.
          * 
          * The seriesId property returns null for items that do not have parent items such as single appointments, series items, or meeting requests and returns undefined for any other items that are not meeting requests.
          * 
@@ -6467,24 +7288,772 @@ declare namespace Office {
          * 
          * @remarks
          * 
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          * 
-         * Applicable Outlook mode: Compose or read
+         * Applicable Outlook mode: Appointment Organizer
+         * 
+         * @beta
          */
         seriesId: string;
+
+        /**
+         * Adds an event handler for a supported event.
+         * 
+         * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         * 
+         * In addition to this signature, the method also has the following signature:
+         * 
+         * `addHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;`
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         * 
+         * @param eventType The event that should invoke the handler.
+         * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to addHandlerAsync.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+         * 
+         * @beta
+         */
+        addHandlerAsync(eventType:EventType, handler: any, options?: any, callback?: (result: AsyncResult) => void): void;
+
+        /**
+         * Adds an event handler for a supported event.
+         * 
+         * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         * 
+         * @param eventType The event that should invoke the handler.
+         * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to addHandlerAsync.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+         * 
+         * @beta
+         */
+        addHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;
+
+       /**
+        * Asynchronously loads custom properties for this add-in on the selected item.
+        *
+        * Custom properties are stored as key/value pairs on a per-app, per-item basis. This method returns a CustomProperties object in the callback, which provides methods to access the custom properties specific to the current item and the current add-in. Custom properties are not encrypted on the item, so this should not be used as secure storage.
+        *
+        * The custom properties are provided as a CustomProperties object in the asyncResult.value property. This object can be used to get, set, and remove custom properties from the item and save changes to the custom property set back to the server.
+        *
+        * [Api set: Mailbox 1.0]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Appointment Organizer
+        *
+        * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
+        * @param userContext Optional. Developers can provide any object they wish to access in the callback function. This object can be accessed by the asyncResult.asyncContext property in the callback function.
+        */
+       loadCustomPropertiesAsync(callback: (result: AsyncResult) => void, userContext?: any): void;
+
+       /**
+        * Removes an event handler for a supported event.
+        * 
+        * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+        * 
+        * [Api set: Mailbox Preview]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Appointment Organizer
+        * 
+        * In addition to this signature, the method also has the following signature:
+        * 
+        * `removeHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;`
+        * 
+        * @param eventType The event that should invoke the handler.
+        * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to removeHandlerAsync.
+        * @param options Optional. An object literal that contains one or more of the following properties.
+        *        asyncContext: Developers can provide any object they wish to access in the callback method.
+        * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+        * 
+        * @beta
+        */
+       removeHandlerAsync(eventType:EventType, handler: any, options?: any, callback?: (result: AsyncResult) => void): void;
+
+       /**
+        * Removes an event handler for a supported event.
+        * 
+        * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+        * 
+        * [Api set: Mailbox Preview]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Appointment Organizer
+        * 
+        * @param eventType The event that should invoke the handler.
+        * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to removeHandlerAsync.
+        * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+        * 
+        * @beta
+        */
+       removeHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;
+
+       /**
+         * Gets or sets the description that appears in the subject field of an item.
+         *
+         * The subject property gets or sets the entire subject of the item, as sent by the email server.
+         *
+         * The subject property returns a Subject object that provides methods to get and set the subject.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         */
+        subject: Subject;
+        /**
+         * Adds a file to a message or appointment as an attachment.
+         *
+         * The addFileAttachmentAsync method uploads the file at the specified URI and attaches it to the item in the compose form.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors:
+         *
+         * AttachmentSizeExceeded - The attachment is larger than allowed.
+         *
+         * FileTypeNotSupported - The attachment has an extension that is not allowed.
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `addFileAttachmentAsync(uri: string, attachmentName: string): void;`
+         * 
+         * `addFileAttachmentAsync(uri: string, attachmentName: string, options: AsyncContextOptions): void;`
+         * 
+         * `addFileAttachmentAsync(uri: string, attachmentName: string, callback: (result: AsyncResult) => void): void;`
+         *
+         * @param uri The URI that provides the location of the file to attach to the message or appointment. The maximum length is 2048 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         *        inInline: If true, indicates that the attachment will be shown inline in the message body, and should not be displayed in the attachment list.
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type asyncResult. On success, the attachment identifier will be provided in the asyncResult.value property. If uploading the attachment fails, the asyncResult object will contain an Error object that provides a description of the error.
+         */
+        addFileAttachmentAsync(uri: string, attachmentName: string, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+        /**
+         * Adds a file to a message or appointment as an attachment.
+         *
+         * The addFileAttachmentAsync method uploads the file at the specified URI and attaches it to the item in the compose form.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors:
+         *
+         * AttachmentSizeExceeded - The attachment is larger than allowed.
+         *
+         * FileTypeNotSupported - The attachment has an extension that is not allowed.
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         *
+         * @param uri The URI that provides the location of the file to attach to the message or appointment. The maximum length is 2048 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         */
+        addFileAttachmentAsync(uri: string, attachmentName: string): void;
+        /**
+         * Adds a file to a message or appointment as an attachment.
+         *
+         * The addFileAttachmentAsync method uploads the file at the specified URI and attaches it to the item in the compose form.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors:
+         *
+         * AttachmentSizeExceeded - The attachment is larger than allowed.
+         *
+         * FileTypeNotSupported - The attachment has an extension that is not allowed.
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         *
+         * @param uri The URI that provides the location of the file to attach to the message or appointment. The maximum length is 2048 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         *        inInline: If true, indicates that the attachment will be shown inline in the message body, and should not be displayed in the attachment list.
+         */
+        addFileAttachmentAsync(uri: string, attachmentName: string, options: AsyncContextOptions): void;
+        /**
+         * Adds a file to a message or appointment as an attachment.
+         *
+         * The addFileAttachmentAsync method uploads the file at the specified URI and attaches it to the item in the compose form.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors:
+         *
+         * AttachmentSizeExceeded - The attachment is larger than allowed.
+         *
+         * FileTypeNotSupported - The attachment has an extension that is not allowed.
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         *
+         * @param uri The URI that provides the location of the file to attach to the message or appointment. The maximum length is 2048 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type asyncResult. On success, the attachment identifier will be provided in the asyncResult.value property. If uploading the attachment fails, the asyncResult object will contain an Error object that provides a description of the error.
+         */
+        addFileAttachmentAsync(uri: string, attachmentName: string, callback: (result: AsyncResult) => void): void;
+
+        /**
+         * Adds an Exchange item, such as a message, as an attachment to the message or appointment.
+         *
+         * The addItemAttachmentAsync method attaches the item with the specified Exchange identifier to the item in the compose form. If you specify a callback method, the method is called with one parameter, asyncResult, which contains either the attachment identifier or a code that indicates any error that occurred while attaching the item. You can use the options parameter to pass state information to the callback method, if needed.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * If your Office add-in is running in Outlook Web App, the addItemAttachmentAsync method can attach items to items other than the item that you are editing; however, this is not supported and is not recommended.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors:
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         * 
+         * In addition to the main signature, this method also has these signatures:
+         * 
+         * `addItemAttachmentAsync(itemId: any, attachmentName: string): void;`
+         * 
+         * `addItemAttachmentAsync(itemId: any, attachmentName: string, options: AsyncContextOptions): void;`
+         * 
+         * `addItemAttachmentAsync(itemId: any, attachmentName: string, callback: (result: AsyncResult) => void): void;`
+         *
+         * @param itemId The Exchange identifier of the item to attach. The maximum length is 100 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         * @param options An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. On success, the attachment identifier will be provided in the asyncResult.value property. If adding the attachment fails, the asyncResult object will contain an Error object that provides a description of the error.
+         */
+        addItemAttachmentAsync(itemId: any, attachmentName: string, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+        /**
+         * Adds an Exchange item, such as a message, as an attachment to the message or appointment.
+         *
+         * The addItemAttachmentAsync method attaches the item with the specified Exchange identifier to the item in the compose form. If you specify a callback method, the method is called with one parameter, asyncResult, which contains either the attachment identifier or a code that indicates any error that occurred while attaching the item. You can use the options parameter to pass state information to the callback method, if needed.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * If your Office add-in is running in Outlook Web App, the addItemAttachmentAsync method can attach items to items other than the item that you are editing; however, this is not supported and is not recommended.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors:
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         *
+         * @param itemId The Exchange identifier of the item to attach. The maximum length is 100 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         */
+        addItemAttachmentAsync(itemId: any, attachmentName: string): void;
+        /**
+         * Adds an Exchange item, such as a message, as an attachment to the message or appointment.
+         *
+         * The addItemAttachmentAsync method attaches the item with the specified Exchange identifier to the item in the compose form. If you specify a callback method, the method is called with one parameter, asyncResult, which contains either the attachment identifier or a code that indicates any error that occurred while attaching the item. You can use the options parameter to pass state information to the callback method, if needed.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * If your Office add-in is running in Outlook Web App, the addItemAttachmentAsync method can attach items to items other than the item that you are editing; however, this is not supported and is not recommended.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors:
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         *
+         * @param itemId The Exchange identifier of the item to attach. The maximum length is 100 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         * @param options An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         */
+        addItemAttachmentAsync(itemId: any, attachmentName: string, options: AsyncContextOptions): void;
+        /**
+         * Adds an Exchange item, such as a message, as an attachment to the message or appointment.
+         *
+         * The addItemAttachmentAsync method attaches the item with the specified Exchange identifier to the item in the compose form. If you specify a callback method, the method is called with one parameter, asyncResult, which contains either the attachment identifier or a code that indicates any error that occurred while attaching the item. You can use the options parameter to pass state information to the callback method, if needed.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * If your Office add-in is running in Outlook Web App, the addItemAttachmentAsync method can attach items to items other than the item that you are editing; however, this is not supported and is not recommended.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors:
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         *
+         * @param itemId The Exchange identifier of the item to attach. The maximum length is 100 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. On success, the attachment identifier will be provided in the asyncResult.value property. If adding the attachment fails, the asyncResult object will contain an Error object that provides a description of the error.
+         */
+        addItemAttachmentAsync(itemId: any, attachmentName: string, callback: (result: AsyncResult) => void): void;
+
+        /**
+         * Closes the current item that is being composed
+         *
+         * The behaviors of the close method depends on the current state of the item being composed. If the item has unsaved changes, the client prompts the user to save, discard, or close the action.
+         *
+         * In the Outlook desktop client, if the message is an inline reply, the close method has no effect.
+         *
+         * Note: In Outlook on the web, if the item is an appointment and it has previously been saved using saveAsync, the user is prompted to save, discard, or cancel even if no changes have occurred since the item was last saved.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         */
+        close(): void;
+        /**
+         * Gets initialization data passed when the add-in is activated by an actionable message.
+         *
+         * Note: This method is only supported by Outlook 2016 for Windows (Click-to-Run versions greater than 16.0.8413.1000) and Outlook on the web for Office 365.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * More information on {@link https://docs.microsoft.com/outlook/actionable-messages/invoke-add-in-from-actionable-message | actionable messages}.
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. On success, the initialization data is provided in the asyncResult.value property as a string. If there is no initialization context, the asyncResult object will contain an Error object with its code property set to 9020 and its name property set to GenericResponseError.
+         *
+         * @beta
+         */
+        getInitializationContextAsync(options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+                /**
+         * Asynchronously returns selected data from the subject or body of a message.
+         *
+         * If there is no selection but the cursor is in the body or subject, the method returns null for the selected data. If a field other than the body or subject is selected, the method returns the InvalidSelection error.
+         *
+         * To access the selected data from the callback method, call asyncResult.value.data. To access the source property that the selection comes from, call asyncResult.value.sourceProperty, which will be either body or subject.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @returns
+         * The selected data as a string with format determined by coercionType.
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * @param coercionType Requests a format for the data. If Text, the method returns the plain text as a string , removing any HTML tags present. If HTML, the method returns the selected text, whether it is plaintext or HTML.
+         * @param options An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
+         */
+        getSelectedDataAsync(coercionType: CoercionType, options: AsyncContextOptions, callback: (result: AsyncResult) => void): void;
+         /**
+         * Asynchronously returns selected data from the subject or body of a message.
+         *
+         * If there is no selection but the cursor is in the body or subject, the method returns null for the selected data. If a field other than the body or subject is selected, the method returns the InvalidSelection error.
+         *
+         * To access the selected data from the callback method, call asyncResult.value.data. To access the source property that the selection comes from, call asyncResult.value.sourceProperty, which will be either body or subject.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @returns
+         * The selected data as a string with format determined by coercionType.
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * @param coercionType Requests a format for the data. If Text, the method returns the plain text as a string , removing any HTML tags present. If HTML, the method returns the selected text, whether it is plaintext or HTML.
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
+         */
+        getSelectedDataAsync(coercionType: CoercionType, callback: (result: AsyncResult) => void): void;
+        /**
+         * Removes an attachment from a message or appointment.
+         *
+         * The removeAttachmentAsync method removes the attachment with the specified identifier from the item. As a best practice, you should use the attachment identifier to remove an attachment only if the same mail app has added that attachment in the same session. In Outlook Web App and OWA for Devices, the attachment identifier is valid only within the same session. A session is over when the user closes the app, or if the user starts composing in an inline form and subsequently pops out the inline form to continue in a separate window.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `removeAttachmentAsync(attachmentIndex: string): void;`
+         * 
+         * `removeAttachmentAsync(attachmentIndex: string, options: AsyncContextOptions): void;`
+         * 
+         * `removeAttachmentAsync(attachmentIndex: string, callback: (result: AsyncResult) => void): void;`
+         *
+         * @param attachmentIndex The identifier of the attachment to remove. The maximum length of the string is 100 characters.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. If removing the attachment fails, the asyncResult.error property will contain an error code with the reason for the failure.
+         */
+        removeAttachmentAsync(attachmentIndex: string, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+        /**
+         * Removes an attachment from a message or appointment.
+         *
+         * The removeAttachmentAsync method removes the attachment with the specified identifier from the item. As a best practice, you should use the attachment identifier to remove an attachment only if the same mail app has added that attachment in the same session. In Outlook Web App and OWA for Devices, the attachment identifier is valid only within the same session. A session is over when the user closes the app, or if the user starts composing in an inline form and subsequently pops out the inline form to continue in a separate window.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param attachmentIndex The identifier of the attachment to remove. The maximum length of the string is 100 characters.
+         */
+        removeAttachmentAsync(attachmentIndex: string): void;
+        /**
+         * Removes an attachment from a message or appointment.
+         *
+         * The removeAttachmentAsync method removes the attachment with the specified identifier from the item. As a best practice, you should use the attachment identifier to remove an attachment only if the same mail app has added that attachment in the same session. In Outlook Web App and OWA for Devices, the attachment identifier is valid only within the same session. A session is over when the user closes the app, or if the user starts composing in an inline form and subsequently pops out the inline form to continue in a separate window.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param attachmentIndex The identifier of the attachment to remove. The maximum length of the string is 100 characters.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         */
+        removeAttachmentAsync(attachmentIndex: string, options: AsyncContextOptions): void;
+        /**
+         * Removes an attachment from a message or appointment.
+         *
+         * The removeAttachmentAsync method removes the attachment with the specified identifier from the item. As a best practice, you should use the attachment identifier to remove an attachment only if the same mail app has added that attachment in the same session. In Outlook Web App and OWA for Devices, the attachment identifier is valid only within the same session. A session is over when the user closes the app, or if the user starts composing in an inline form and subsequently pops out the inline form to continue in a separate window.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param attachmentIndex The identifier of the attachment to remove. The maximum length of the string is 100 characters.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. If removing the attachment fails, the asyncResult.error property will contain an error code with the reason for the failure.
+         */
+        removeAttachmentAsync(attachmentIndex: string, callback: (result: AsyncResult) => void): void;
+
+        /**
+         * Asynchronously saves an item.
+         *
+         * When invoked, this method saves the current message as a draft and returns the item id via the callback method. In Outlook Web App or Outlook in online mode, the item is saved to the server. In Outlook in cached mode, the item is saved to the local cache.
+         *
+         * Since appointments have no draft state, if saveAsync is called on an appointment in compose mode, the item will be saved as a normal appointment on the user's calendar. For new appointments that have not been saved before, no invitation will be sent. Saving an existing appointment will send an update to added or removed attendees.
+         *
+         * Note: If your add-in calls saveAsync on an item in compose mode in order to get an itemId to use with EWS or the REST API, be aware that when Outlook is in cached mode, it may take some time before the item is actually synced to the server. Until the item is synced, using the itemId will return an error.
+         *
+         * Note: The following clients have different behavior for saveAsync on appointments in compose mode:
+         *
+         * - Mac Outlook does not support saveAsync on a meeting in compose mode. Calling saveAsync on a meeting in Mac Outlook will return an error.
+         *
+         * - Outlook on the web always sends an invitation or update when saveAsync is called on an appointment in compose mode.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `saveAsync(): void;`
+         * 
+         * `saveAsync(options: AsyncContextOptions): void;`
+         * 
+         * `saveAsync(callback: (result: AsyncResult) => void): void;`
+         *
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. If removing the attachment fails, the asyncResult.error property will contain an error code with the reason for the failure.
+         */
+        saveAsync(options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+        /**
+         * Asynchronously saves an item.
+         *
+         * When invoked, this method saves the current message as a draft and returns the item id via the callback method. In Outlook Web App or Outlook in online mode, the item is saved to the server. In Outlook in cached mode, the item is saved to the local cache.
+         *
+         * Since appointments have no draft state, if saveAsync is called on an appointment in compose mode, the item will be saved as a normal appointment on the user's calendar. For new appointments that have not been saved before, no invitation will be sent. Saving an existing appointment will send an update to added or removed attendees.
+         *
+         * Note: If your add-in calls saveAsync on an item in compose mode in order to get an itemId to use with EWS or the REST API, be aware that when Outlook is in cached mode, it may take some time before the item is actually synced to the server. Until the item is synced, using the itemId will return an error.
+         *
+         * Note: The following clients have different behavior for saveAsync on appointments in compose mode:
+         *
+         * - Mac Outlook does not support saveAsync on a meeting in compose mode. Calling saveAsync on a meeting in Mac Outlook will return an error.
+         *
+         * - Outlook on the web always sends an invitation or update when saveAsync is called on an appointment in compose mode.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         */
+        saveAsync(): void;
+        /**
+         * Asynchronously saves an item.
+         *
+         * When invoked, this method saves the current message as a draft and returns the item id via the callback method. In Outlook Web App or Outlook in online mode, the item is saved to the server. In Outlook in cached mode, the item is saved to the local cache.
+         *
+         * Since appointments have no draft state, if saveAsync is called on an appointment in compose mode, the item will be saved as a normal appointment on the user's calendar. For new appointments that have not been saved before, no invitation will be sent. Saving an existing appointment will send an update to added or removed attendees.
+         *
+         * Note: If your add-in calls saveAsync on an item in compose mode in order to get an itemId to use with EWS or the REST API, be aware that when Outlook is in cached mode, it may take some time before the item is actually synced to the server. Until the item is synced, using the itemId will return an error.
+         *
+         * Note: The following clients have different behavior for saveAsync on appointments in compose mode:
+         *
+         * - Mac Outlook does not support saveAsync on a meeting in compose mode. Calling saveAsync on a meeting in Mac Outlook will return an error.
+         *
+         * - Outlook on the web always sends an invitation or update when saveAsync is called on an appointment in compose mode.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         */
+        saveAsync(options: AsyncContextOptions): void;
+        /**
+         * Asynchronously saves an item.
+         *
+         * When invoked, this method saves the current message as a draft and returns the item id via the callback method. In Outlook Web App or Outlook in online mode, the item is saved to the server. In Outlook in cached mode, the item is saved to the local cache.
+         *
+         * Since appointments have no draft state, if saveAsync is called on an appointment in compose mode, the item will be saved as a normal appointment on the user's calendar. For new appointments that have not been saved before, no invitation will be sent. Saving an existing appointment will send an update to added or removed attendees.
+         *
+         * Note: If your add-in calls saveAsync on an item in compose mode in order to get an itemId to use with EWS or the REST API, be aware that when Outlook is in cached mode, it may take some time before the item is actually synced to the server. Until the item is synced, using the itemId will return an error.
+         *
+         * Note: The following clients have different behavior for saveAsync on appointments in compose mode:
+         *
+         * - Mac Outlook does not support saveAsync on a meeting in compose mode. Calling saveAsync on a meeting in Mac Outlook will return an error.
+         *
+         * - Outlook on the web always sends an invitation or update when saveAsync is called on an appointment in compose mode.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. If removing the attachment fails, the asyncResult.error property will contain an error code with the reason for the failure.
+         */
+        saveAsync(callback: (result: AsyncResult) => void): void;
+        /**
+         * Asynchronously inserts data into the body or subject of a message.
+         *
+         * The setSelectedDataAsync method inserts the specified string at the cursor location in the subject or body of the item, or, if text is selected in the editor, it replaces the selected text. If the cursor is not in the body or subject field, an error is returned. After insertion, the cursor is placed at the end of the inserted content.
+         *
+         * [Api set: Mailbox 1.2]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `setSelectedDataAsync(data: string): void;`
+         * 
+         * `setSelectedDataAsync(data: string, options: AsyncContextOptions & CoercionTypeOptions): void;`
+         * 
+         * `setSelectedDataAsync(data: string, callback: (result: AsyncResult) => void): void;`
+         *
+         * @param data The data to be inserted. Data is not to exceed 1,000,000 characters. If more than 1,000,000 characters are passed in, an ArgumentOutOfRange exception is thrown.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         *        coercionType: If text, the current style is applied in Outlook Web App and Outlook. If the field is an HTML editor, only the text data is inserted, even if the data is HTML. If html and the field supports HTML (the subject doesn't), the current style is applied in Outlook Web App and the default style is applied in Outlook. If the field is a text field, an InvalidDataFormat error is returned. If coercionType is not set, the result depends on the field: if the field is HTML then HTML is used; if the field is text, then plain text is used.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. If removing the attachment fails, the asyncResult.error property will contain an error code with the reason for the failure.
+         */
+        setSelectedDataAsync(data: string, options?: AsyncContextOptions & CoercionTypeOptions, callback?: (result: AsyncResult) => void): void;
+        /**
+         * Asynchronously inserts data into the body or subject of a message.
+         *
+         * The setSelectedDataAsync method inserts the specified string at the cursor location in the subject or body of the item, or, if text is selected in the editor, it replaces the selected text. If the cursor is not in the body or subject field, an error is returned. After insertion, the cursor is placed at the end of the inserted content.
+         *
+         * [Api set: Mailbox 1.2]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param data The data to be inserted. Data is not to exceed 1,000,000 characters. If more than 1,000,000 characters are passed in, an ArgumentOutOfRange exception is thrown.
+         */
+        setSelectedDataAsync(data: string): void;
+        /**
+         * Asynchronously inserts data into the body or subject of a message.
+         *
+         * The setSelectedDataAsync method inserts the specified string at the cursor location in the subject or body of the item, or, if text is selected in the editor, it replaces the selected text. If the cursor is not in the body or subject field, an error is returned. After insertion, the cursor is placed at the end of the inserted content.
+         *
+         * [Api set: Mailbox 1.2]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param data The data to be inserted. Data is not to exceed 1,000,000 characters. If more than 1,000,000 characters are passed in, an ArgumentOutOfRange exception is thrown.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         *        coercionType: If text, the current style is applied in Outlook Web App and Outlook. If the field is an HTML editor, only the text data is inserted, even if the data is HTML. If html and the field supports HTML (the subject doesn't), the current style is applied in Outlook Web App and the default style is applied in Outlook. If the field is a text field, an InvalidDataFormat error is returned. If coercionType is not set, the result depends on the field: if the field is HTML then HTML is used; if the field is text, then plain text is used.
+         */
+        setSelectedDataAsync(data: string, options: AsyncContextOptions & CoercionTypeOptions): void;
+        /**
+         * Asynchronously inserts data into the body or subject of a message.
+         *
+         * The setSelectedDataAsync method inserts the specified string at the cursor location in the subject or body of the item, or, if text is selected in the editor, it replaces the selected text. If the cursor is not in the body or subject field, an error is returned. After insertion, the cursor is placed at the end of the inserted content.
+         *
+         * [Api set: Mailbox 1.2]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Appointment Organizer
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param data The data to be inserted. Data is not to exceed 1,000,000 characters. If more than 1,000,000 characters are passed in, an ArgumentOutOfRange exception is thrown.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. If removing the attachment fails, the asyncResult.error property will contain an error code with the reason for the failure.
+         */
+        setSelectedDataAsync(data: string, callback: (result: AsyncResult) => void): void;
     }
     /**
-     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of Office.context.mailbox.item. Refer to the [Object Model pages for more information](https://review.docs.microsoft.com/en-us/javascript/office/objectmodel/preview-requirement-set/office-item?branch=AlexJ-OMPreservation).
+     * The appointment attendee mode of {@link Office.Item | Office.context.mailbox.item}.
+     * 
+     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of 'Office.context.mailbox.item'. Refer to the Object Model pages for more information.
      */
-    interface AppointmentCompose extends Appointment, ItemCompose {
+    interface AppointmentRead extends Appointment, ItemRead {
         /**
-         * Gets or sets the date and time that the appointment is to end.
+         * Gets the date and time that the appointment is to end.
          *
-         * The end property is expressed as a Coordinated Universal Time (UTC) date and time value. You can use the convertToLocalClientTime method to convert the end property value to the client's local date and time.
-         *
-         * *Compose mode*
-         *
-         * The end property returns a Time object.
+         * The end property is a Date object expressed as a Coordinated Universal Time (UTC) date and time value. You can use the convertToLocalClientTime method to convert the end property value to the client's local date and time.
          *
          * When you use the Time.setAsync method to set the end time, you should use the convertToUtcClientTime method to convert the local time on the client to UTC for the server.
          *
@@ -6492,89 +8061,13 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Compose or read
+         * Applicable Outlook mode: Appointment Attendee
          */
-        end: Time;
-        /**
-         * Gets or sets the location of an appointment.
-         *
-         * *Compose mode*
-         *
-         * The location property returns a Location object that provides methods that are used to get and set the location of the appointment.
-         *
-         * [Api set: Mailbox 1.0]
-         *
-         * @remarks
-         *
-         * Minimum permission level: ReadItem
-         *
-         * Applicable Outlook mode: Compose or read
-         */
-        location: Location;
-        /**
-         * Provides access to the optional attendees of an event. The type of object and level of access depends on the mode of the current item.
-         *
-         * *Compose mode*
-         *
-         * The optionalAttendees property returns a Recipients object that provides methods to get or update the optional attendees for a meeting.
-         *
-         * [Api set: Mailbox 1.0]
-         *
-         * @remarks
-         *
-         * Minimum permission level: ReadItem
-         *
-         * Applicable Outlook mode: Compose or read
-         */
-        optionalAttendees: Recipients;
-        /**
-         * Provides access to the required attendees of an event. The type of object and level of access depends on the mode of the current item.
-         *
-         * *Compose mode*
-         *
-         * The requiredAttendees property returns a Recipients object that provides methods to get or update the required attendees for a meeting.
-         *
-         * [Api set: Mailbox 1.0]
-         *
-         * @remarks
-         *
-         * Minimum permission level: ReadItem
-         *
-         * Applicable Outlook mode: Compose or read
-         */
-        requiredAttendees: Recipients;
-        /**
-         * Gets or sets the date and time that the appointment is to begin.
-         *
-         * The start property is expressed as a Coordinated Universal Time (UTC) date and time value. You can use the convertToLocalClientTime method to convert the value to the client's local date and time.
-         *
-         * *Compose mode*
-         *
-         * The start property returns a Time object.
-         *
-         * When you use the Time.setAsync method to set the start time, you should use the convertToUtcClientTime method to convert the local time on the client to UTC for the server.
-         *
-         * [Api set: Mailbox 1.0]
-         *
-         * @remarks
-         *
-         * Minimum permission level: ReadItem
-         *
-         * Applicable Outlook mode: Compose or read
-         */
-        start: Time;
-    }
-    /**
-     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of Office.context.mailbox.item. Refer to the [Object Model pages for more information](https://review.docs.microsoft.com/en-us/javascript/office/objectmodel/preview-requirement-set/office-item?branch=AlexJ-OMPreservation).
-     */
-    interface AppointmentRead extends Appointment, ItemRead {
         end: Date;
         /**
-         * Gets or sets the location of an appointment.
-         *
-         * *Read mode*
+         * Gets the location of an appointment.
          *
          * The location property returns a string that contains the location of the appointment.
          *
@@ -6582,25 +8075,23 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Compose or read
+         * Applicable Outlook mode: Appointment Attendee
          */
         location: string;
         /**
          * Provides access to the optional attendees of an event. The type of object and level of access depends on the mode of the current item.
          *
-         * *Read mode*
-         *
-         * The optionalAttendees property returns an array that contains an EmailAddressDetails object for each optional attendee to the meeting.
+         * The optionalAttendees property returns an array that contains an {@link Office.EmailAddressDetails} object for each optional attendee to the meeting.
          *
          * [Api set: Mailbox 1.0]
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Compose or read
+         * Applicable Outlook mode: Appointment Attendee
          */
         optionalAttendees: EmailAddressDetails[];
         /**
@@ -6610,46 +8101,645 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Read
+         * Applicable Outlook mode: Appointment Attendee
          */
         organizer: EmailAddressDetails;
         /**
          * Provides access to the required attendees of an event. The type of object and level of access depends on the mode of the current item.
          *
-         * *Read mode*
-         *
-         * The requiredAttendees property returns an array that contains an EmailAddressDetails object for each required attendee to the meeting.
+         * The requiredAttendees property returns an array that contains an {@link Office.EmailAddressDetails} object for each required attendee to the meeting.
          *
          * [Api set: Mailbox 1.0]
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Compose or read
+         * Applicable Outlook mode: Appointment Attendee
          */
         requiredAttendees: EmailAddressDetails[];
         /**
-         * Gets or sets the date and time that the appointment is to begin.
+         * Gets the date and time that the appointment is to begin.
          *
-         * The start property is expressed as a Coordinated Universal Time (UTC) date and time value. You can use the convertToLocalClientTime method to convert the value to the client's local date and time.
-         *
-         * *Read mode*
-         *
-         * The start property returns a Date object.
+         * The start property is a Date object expressed as a Coordinated Universal Time (UTC) date and time value. You can use the convertToLocalClientTime method to convert the value to the client's local date and time.
          *
          * [Api set: Mailbox 1.0]
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Compose or read
+         * Applicable Outlook mode: Appointment Attendee
          */
         start: Date;
+
+        // Repeated Item Fields //
+
+         /**
+         * Gets an object that provides methods for manipulating the body of an item.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         */
+        body: Body;
+        /**
+         * Gets the date and time that an item was created. Read mode only.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         */
+        dateTimeCreated: Date;
+        /**
+         * Gets the date and time that an item was last modified. Read mode only.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * Note: This member is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         */
+        dateTimeModifed: Date;
+        /**
+         * Gets the type of item that an instance represents.
+         *
+         * The itemType property returns one of the ItemType enumeration values, indicating whether the item object instance is a message or an appointment.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         */
+        itemType: Office.MailboxEnums.ItemType;
+        /**
+         * Gets the notification messages for an item.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         */
+        notificationMessages: NotificationMessages;
+
+        /**
+         * Gets the recurrence pattern of an appointment. Gets the recurrence pattern of a meeting request.
+         * 
+         * The recurrence property returns a recurrence object for recurring appointments or meetings requests if an item is a series or an instance in a series. null is returned for single appointments and meeting requests of single appointments.
+         * 
+         * Note: Meeting requests have an itemClass value of IPM.Schedule.Meeting.Request.
+         * 
+         * Note: If the recurrence object is null, this indicates that the object is a single appointment or a meeting request of a single appointment and NOT a part of a series.
+         * 
+         * [Api set: Mailbox Preview]
+         * 
+         * @remarks
+         * 
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         * 
+         * Applicable Outlook mode: Appointment Attendee
+         * 
+         * @beta
+         */
+        recurrence: Recurrence;
+
+        /**
+         * Gets the id of the series that an instance belongs to.
+         * 
+         * In OWA and Outlook, the seriesId returns the Exchange Web Services (EWS) ID of the parent (series) item that this item belongs to. However, in iOS and Android, the seriesId returns the REST ID of the parent item.
+         * 
+         * Note: The identifier returned by the seriesId property is the same as the Exchange Web Services item identifier. The seriesId property is not identical to the Outlook IDs used by the Outlook REST API. Before making REST API calls using this value, it should be converted using Office.context.mailbox.convertToRestId. For more details, see {@link https://docs.microsoft.com/outlook/add-ins/use-rest-api | Use the Outlook REST APIs from an Outlook add-in}.
+         * 
+         * The seriesId property returns null for items that do not have parent items such as single appointments, series items, or meeting requests and returns undefined for any other items that are not meeting requests.
+         * 
+         * [Api set: Mailbox Preview]
+         * 
+         * @remarks
+         * 
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         * 
+         * Applicable Outlook mode: Appointment Attendee
+         * 
+         * @beta
+         */
+        seriesId: string;
+
+        /**
+         * Adds an event handler for a supported event.
+         * 
+         * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         * 
+         * In addition to this signature, the method also has the following signature:
+         * 
+         * `addHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;`
+         * 
+         * @param eventType The event that should invoke the handler.
+         * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to addHandlerAsync.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+         * 
+         * @beta
+         */
+        addHandlerAsync(eventType:EventType, handler: any, options?: any, callback?: (result: AsyncResult) => void): void;
+
+        /**
+         * Adds an event handler for a supported event.
+         * 
+         * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         * 
+         * @param eventType The event that should invoke the handler.
+         * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to addHandlerAsync.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+         * 
+         * @beta
+         */
+        addHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;
+
+       /**
+        * Asynchronously loads custom properties for this add-in on the selected item.
+        *
+        * Custom properties are stored as key/value pairs on a per-app, per-item basis. This method returns a CustomProperties object in the callback, which provides methods to access the custom properties specific to the current item and the current add-in. Custom properties are not encrypted on the item, so this should not be used as secure storage.
+        *
+        * The custom properties are provided as a CustomProperties object in the asyncResult.value property. This object can be used to get, set, and remove custom properties from the item and save changes to the custom property set back to the server.
+        *
+        * [Api set: Mailbox 1.0]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Appointment Attendee
+        *
+        * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
+        * @param userContext Optional. Developers can provide any object they wish to access in the callback function. This object can be accessed by the asyncResult.asyncContext property in the callback function.
+        */
+       loadCustomPropertiesAsync(callback: (result: AsyncResult) => void, userContext?: any): void;
+
+       /**
+        * Removes an event handler for a supported event.
+        * 
+        * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+        * 
+        * [Api set: Mailbox Preview]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Appointment Attendee
+        * 
+        * In addition to this signature, the method also has the following signature:
+        * 
+        * `removeHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;`
+        * 
+        * @param eventType The event that should invoke the handler.
+        * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to removeHandlerAsync.
+        * @param options Optional. An object literal that contains one or more of the following properties.
+        *        asyncContext: Developers can provide any object they wish to access in the callback method.
+        * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+        * 
+        * @beta
+        */
+       removeHandlerAsync(eventType:EventType, handler: any, options?: any, callback?: (result: AsyncResult) => void): void;
+
+       /**
+        * Removes an event handler for a supported event.
+        * 
+        * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+        * 
+        * [Api set: Mailbox Preview]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Appointment Attendee
+        * 
+        * @param eventType The event that should invoke the handler.
+        * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to removeHandlerAsync.
+        * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+        * 
+        * @beta
+        */
+       removeHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;
+
+        /**
+         * Gets an array of attachments for the item.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * Note: Certain types of files are blocked by Outlook due to potential security issues and are therefore not returned. For more information, see {@link https://support.office.com/article/Blocked-attachments-in-Outlook-434752E1-02D3-4E90-9124-8B81E49A8519 | Blocked attachments in Outlook}.
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         *
+         */
+        attachments: AttachmentDetails[];
+        /**
+         * Gets the Exchange Web Services item class of the selected item.
+         *
+
+         *
+         * You can create custom message classes that extends a default message class, for example, a custom appointment message class IPM.Appointment.Contoso.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         * 
+         * The itemClass property specifies the message class of the selected item. The following are the default message classes for the message or appointment item.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Type</th>
+         *     <th>Description</th>
+         *     <th>Item Class</th>
+         *   </tr>
+         *   <tr>
+         *     <td>Appointment items</td>
+         *     <td>These are calendar items of the item class IPM.Appointment or IPM.Appointment.Occurence.</td>
+         *     <td>IPM.Appointment,IPM.Appointment.Occurence</td>
+         *   </tr>
+         *   <tr>
+         *     <td>Message items</td>
+         *     <td>These include email messages that have the default message class IPM.Note, and meeting requests, responses, and cancellations, that use IPM.Schedule.Meeting as the base message class.</td>
+         *     <td>IPM.Note,IPM.Schedule.Meeting.Request,IPM.Schedule.Meeting.Neg,IPM.Schedule.Meeting.Pos,IPM.Schedule.Meeting.Tent,IPM.Schedule.Meeting.Canceled</td>
+         *   </tr>
+         * </table>
+         * 
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         */
+        itemClass: string;
+        
+        /**
+         * Gets the Exchange Web Services item identifier for the current item.
+         *
+         * The itemId property is not available in compose mode. If an item identifier is required, the saveAsync method can be used to save the item to the store, which will return the item identifier in the AsyncResult.value parameter in the callback function.
+         *
+         * Note: The identifier returned by the itemId property is the same as the Exchange Web Services item identifier. The itemId property is not identical to the Outlook Entry ID or the ID used by the Outlook REST API. Before making REST API calls using this value, it should be converted using Office.context.mailbox.convertToRestId. For more details, see Use the Outlook REST APIs from an Outlook add-in.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         */
+        itemId: string;
+        /**
+         * Gets the subject of an item, with all prefixes removed (including RE: and FWD:).
+         *
+         * The normalizedSubject property gets the subject of the item, with any standard prefixes (such as RE: and FW:) that are added by email programs. To get the subject of the item with the prefixes intact, use the subject property.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         */
+        normalizedSubject: string;
+        /**
+         * Gets the description that appears in the subject field of an item.
+         *
+         * The subject property gets or sets the entire subject of the item, as sent by the email server.
+         *
+         * The subject property returns a string. Use the normalizedSubject property to get the subject minus any leading prefixes such as RE: and FW:.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         */
+        subject: string;
+        /**
+         * Displays a reply form that includes the sender and all recipients of the selected message or the organizer and all attendees of the selected appointment.
+         *
+         * In Outlook Web App, the reply form is displayed as a pop-out form in the 3-column view and a pop-up form in the 2- or 1-column view.
+         *
+         * If any of the string parameters exceed their limits, displayReplyAllForm throws an exception.
+         *
+         * When attachments are specified in the formData.attachments parameter, Outlook and Outlook Web App attempt to download all attachments and attach them to the reply form. If any attachments fail to be added, an error is shown in the form UI. If this isn't possible, then no error message is thrown.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         *
+         * @param formData A string that contains text and HTML and that represents the body of the reply form. The string is limited to 32 KB
+         *  OR
+         * An {@link Office.ReplyFormData} object that contains body or attachment data and a callback function
+         */
+        displayReplyAllForm(formData: string | ReplyFormData): void;
+        /**
+         * Displays a reply form that includes only the sender of the selected message or the organizer of the selected appointment.
+         *
+         * In Outlook Web App, the reply form is displayed as a pop-out form in the 3-column view and a pop-up form in the 2- or 1-column view.
+         *
+         * If any of the string parameters exceed their limits, displayReplyForm throws an exception.
+         *
+         * When attachments are specified in the formData.attachments parameter, Outlook and Outlook Web App attempt to download all attachments and attach them to the reply form. If any attachments fail to be added, an error is shown in the form UI. If this isn't possible, then no error message is thrown.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         *
+         * @param formData A string that contains text and HTML and that represents the body of the reply form. The string is limited to 32 KB.
+         * OR
+         * An {@link Office.ReplyFormData} object that contains body or attachment data and a callback function.
+         */
+        displayReplyForm(formData: string | ReplyFormData): void;
+        /**
+         * Gets initialization data passed when the add-in is {@link https://docs.microsoft.com/outlook/actionable-messages/invoke-add-in-from-actionable-message | activated by an actionable message}.
+         * 
+         * Note: This method is only supported by Outlook 2016 for Windows (Click-to-Run versions greater than 16.0.8413.1000) and Outlook on the web for Office 365.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         * 
+         * In addition to this signature, the method also has the following signature:
+         * 
+         * `getInitializationContextAsync(callback?: (result: AsyncResult) => void): void;`
+         * 
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object. On success, the initialization data is provided in the asyncResult.value property as a string. If there is no initialization context, the asyncResult object will contain an Error object with its code property set to 9020 and its name property set to GenericResponseError.
+         *
+         * @beta
+         */
+        getInitializationContextAsync(options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+        /**
+         * Gets initialization data passed when the add-in is {@link https://docs.microsoft.com/outlook/actionable-messages/invoke-add-in-from-actionable-message | activated by an actionable message}.
+         * 
+         * Note: This method is only supported by Outlook 2016 for Windows (Click-to-Run versions greater than 16.0.8413.1000) and Outlook on the web for Office 365.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         * 
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object. On success, the initialization data is provided in the asyncResult.value property as a string. If there is no initialization context, the asyncResult object will contain an Error object with its code property set to 9020 and its name property set to GenericResponseError.
+         *
+         * @beta
+         */
+        getInitializationContextAsync(callback?: (result: AsyncResult) => void): void;
+        /**
+         * Gets the entities found in the selected item.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         */
+        getEntities(): Entities;
+        /**
+         * Gets an array of all the entities of the specified entity type found in the selected item.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         * 
+         * @param entityType One of the EntityType enumeration values.
+         *
+         * @returns
+         * If the value passed in entityType is not a valid member of the EntityType enumeration, the method returns null. If no entities of the specified type are present on the item, the method returns an empty array. Otherwise, the type of the objects in the returned array depends on the type of entity requested in the entityType parameter.
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         * 
+         * While the minimum permission level to use this method is Restricted, some entity types require ReadItem to access, as specified in the following table.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Value of entityType</th>
+         *     <th>Type of objects in returned array</th>
+         *     <th>Required Permission Leve</th>
+         *   </tr>
+         *   <tr>
+         *     <td>Address</td>
+         *     <td>String</td>
+         *     <td>Restricted</td>
+         *   </tr>
+         *   <tr>
+         *     <td>Contact</td>
+         *     <td>Contact</td>
+         *     <td>ReadItem</td>
+         *   </tr>
+         *   <tr>
+         *     <td>EmailAddress</td>
+         *     <td>String</td>
+         *     <td>ReadItem</td>
+         *   </tr>
+         *   <tr>
+         *     <td>MeetingSuggestion</td>
+         *     <td>MeetingSuggestion</td>
+         *     <td>ReadItem</td>
+         *   </tr>
+         *   <tr>
+         *     <td>PhoneNumber</td>
+         *     <td>PhoneNumber</td>
+         *     <td>Restricted</td>
+         *   </tr>
+         *   <tr>
+         *     <td>TaskSuggestion</td>
+         *     <td>TaskSuggestion</td>
+         *     <td>ReadItem</td>
+         *   </tr>
+         *   <tr>
+         *     <td>URL</td>
+         *     <td>String</td>
+         *     <td>Restricted</td>
+         *   </tr>
+         * </table>
+         */
+        getEntitiesByType(entityType: Office.MailboxEnums.EntityType): (string | Contact | MeetingSuggestion | PhoneNumber | TaskSuggestion)[];
+        /**
+         * Returns well-known entities in the selected item that pass the named filter defined in the manifest XML file.
+         *
+         * The getFilteredEntitiesByName method returns the entities that match the regular expression defined in the ItemHasKnownEntity rule element in the manifest XML file with the specified FilterName element value.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         *
+         * @param name The name of the ItemHasKnownEntity rule element that defines the filter to match.
+         * @returns If there is no ItemHasKnownEntity element in the manifest with a FilterName element value that matches the name parameter, the method returns null. If the name parameter does match an ItemHasKnownEntity element in the manifest, but there are no entities in the current item that match, the method return an empty array.
+         */
+        getFilteredEntitiesByName(name: string): (string | Contact | MeetingSuggestion | PhoneNumber | TaskSuggestion)[];
+        /**
+         * Returns string values in the selected item that match the regular expressions defined in the manifest XML file.
+         *
+         * The getRegExMatches method returns the strings that match the regular expression defined in each ItemHasRegularExpressionMatch or ItemHasKnownEntity rule element in the manifest XML file. For an ItemHasRegularExpressionMatch rule, a matching string has to occur in the property of the item that is specified by that rule. The PropertyName simple type defines the supported properties.
+         *
+         * If you specify an ItemHasRegularExpressionMatch rule on the body property of an item, the regular expression should further filter the body and should not attempt to return the entire body of the item. Using a regular expression such as .* to obtain the entire body of an item does not always return the expected results. Instead, use the Body.getAsync method to retrieve the entire body.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @returns
+         * An object that contains arrays of strings that match the regular expressions defined in the manifest XML file. The name of each array is equal to the corresponding value of the RegExName attribute of the matching ItemHasRegularExpressionMatch rule or the FilterName attribute of the matching ItemHasKnownEntity rule.
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         */
+        getRegExMatches(): any;
+        /**
+         * Returns string values in the selected item that match the named regular expression defined in the manifest XML file.
+         *
+         * The getRegExMatchesByName method returns the strings that match the regular expression defined in the ItemHasRegularExpressionMatch rule element in the manifest XML file with the specified RegExName element value.
+         *
+         * If you specify an ItemHasRegularExpressionMatch rule on the body property of an item, the regular expression should further filter the body and should not attempt to return the entire body of the item. Using a regular expression such as .* to obtain the entire body of an item does not always return the expected results.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @returns
+         * An array that contains the strings that match the regular expression defined in the manifest XML file.
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         *
+         * @param name The name of the ItemHasRegularExpressionMatch rule element that defines the filter to match.
+         */
+        getRegExMatchesByName(name: string): string[];
+        /**
+         * Gets the entities found in a highlighted match a user has selected. Highlighted matches apply to contextual add-ins.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         *
+         * @param name The name of the ItemHasRegularExpressionMatch rule element that defines the filter to match.
+         */
+        getSelectedEntities(): Entities;
+        /**
+         * Returns string values in a highlighted match that match the regular expressions defined in the manifest XML file. Highlighted matches apply to contextual add-ins.
+         *
+         * The getSelectedRegExMatches method returns the strings that match the regular expression defined in each ItemHasRegularExpressionMatch or ItemHasKnownEntity rule element in the manifest XML file. For an ItemHasRegularExpressionMatch rule, a matching string has to occur in the property of the item that is specified by that rule. The PropertyName simple type defines the supported properties.
+         *
+         * If you specify an ItemHasRegularExpressionMatch rule on the body property of an item, the regular expression should further filter the body and should not attempt to return the entire body of the item. Using a regular expression such as .* to obtain the entire body of an item does not always return the expected results. Instead, use the Body.getAsync method to retrieve the entire body.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * @returns
+         * An object that contains arrays of strings that match the regular expressions defined in the manifest XML file. The name of each array is equal to the corresponding value of the RegExName attribute of the matching ItemHasRegularExpressionMatch rule or the FilterName attribute of the matching ItemHasKnownEntity rule.
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Appointment Attendee
+         */
+        getSelectedRegExMatches(): any;
     }
+
+    /**
+     * The AppointmentForm namespace is used to access the currently selected appointment.
+     *
+     * [Api set: Mailbox 1.0]
+     *
+     * @remarks
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
+     *
+     * Applicable Outlook mode: Compose or read
+     */
     interface AppointmentForm {
         /**
          * Gets an object that provides methods for manipulating the body of an item.
@@ -6658,7 +8748,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -6682,7 +8772,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -6702,7 +8792,7 @@ declare namespace Office {
         *
         * @remarks
         *
-        * Minimum permission level: ReadItem
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
         * Applicable Outlook mode: Compose or read
         */
         location: string;
@@ -6721,7 +8811,7 @@ declare namespace Office {
         *
         * @remarks
         *
-        * Minimum permission level: ReadItem
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
         *
         * Applicable Outlook mode: Compose or read
         */
@@ -6742,7 +8832,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -6766,7 +8856,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -6788,7 +8878,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -6796,12 +8886,12 @@ declare namespace Office {
     }
 
     /**
-     * The item namespace is used to access the currently selected message, meeting request, or appointment. You can determine the type of the item by using the itemType property.
+     * The item namespace is used to access the currently selected message, meeting request, or appointment. You can determine the type of the item by using the `itemType` property.
      *
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: Restricted
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
      *
      * Applicable Outlook mode: Compose or read
      */
@@ -6813,7 +8903,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -6825,7 +8915,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          */
@@ -6839,7 +8929,7 @@ declare namespace Office {
          *
          * Note: This member is not supported in Outlook for iOS or Outlook for Android.
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          */
@@ -6853,7 +8943,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -6865,11 +8955,53 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
         notificationMessages: NotificationMessages;
+
+        /**
+         * Gets or sets the recurrence pattern of an appointment. Gets the recurrence pattern of a meeting request. Read and compose modes for appointment items. Read mode for meeting request items.
+         * 
+         * The recurrence property returns a recurrence object for recurring appointments or meetings requests if an item is a series or an instance in a series. null is returned for single appointments and meeting requests of single appointments. undefined is returned for messages that are not meeting requests.
+         * 
+         * Note: Meeting requests have an itemClass value of IPM.Schedule.Meeting.Request.
+         * 
+         * Note: If the recurrence object is null, this indicates that the object is a single appointment or a meeting request of a single appointment and NOT a part of a series.
+         * 
+         * [Api set: Mailbox Preview]
+         * 
+         * @remarks
+         * 
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         * 
+         * Applicable Outlook mode: Compose or read
+         * 
+         * @beta
+         */
+        recurrence: Recurrence;
+
+        /**
+         * Gets the id of the series that an instance belongs to.
+         * 
+         * In OWA and Outlook, the seriesId returns the Exchange Web Services (EWS) ID of the parent (series) item that this item belongs to. However, in iOS and Android, the seriesId returns the REST ID of the parent item.
+         * 
+         * Note: The identifier returned by the seriesId property is the same as the Exchange Web Services item identifier. The seriesId property is not identical to the Outlook IDs used by the Outlook REST API. Before making REST API calls using this value, it should be converted using Office.context.mailbox.convertToRestId. For more details, see {@link https://docs.microsoft.com/outlook/add-ins/use-rest-api | Use the Outlook REST APIs from an Outlook add-in}.
+         * 
+         * The seriesId property returns null for items that do not have parent items such as single appointments, series items, or meeting requests and returns undefined for any other items that are not meeting requests.
+         * 
+         * [Api set: Mailbox Preview]
+         * 
+         * @remarks
+         * 
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         * 
+         * Applicable Outlook mode: Compose or read
+         * 
+         * @beta
+         */
+        seriesId: string;
 
         /**
          * Adds an event handler for a supported event.
@@ -6880,15 +9012,21 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
+         * 
+         * In addition to this signature, the method also has the following signature:
+         * 
+         * `addHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;`
          * 
          * @param eventType The event that should invoke the handler.
          * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to addHandlerAsync.
          * @param options Optional. An object literal that contains one or more of the following properties.
          *        asyncContext: Developers can provide any object they wish to access in the callback method.
          * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+         * 
+         * @beta
          */
         addHandlerAsync(eventType:EventType, handler: any, options?: any, callback?: (result: AsyncResult) => void): void;
 
@@ -6901,13 +9039,15 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          * 
          * @param eventType The event that should invoke the handler.
          * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to addHandlerAsync.
          * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+         * 
+         * @beta
          */
         addHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;
 
@@ -6922,7 +9062,7 @@ declare namespace Office {
         *
         * @remarks
         *
-        * Minimum permission level: ReadItem
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
         *
         * Applicable Outlook mode: Compose or read
         *
@@ -6936,19 +9076,25 @@ declare namespace Office {
         * 
         * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
         * 
-         * [Api set: Mailbox Preview]
-         *
-         * @remarks
-         *
-         * Minimum permission level: ReadItem
-         *
-         * Applicable Outlook mode: Compose or read
-         * 
-         * @param eventType The event that should invoke the handler.
-         * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to removeHandlerAsync.
-         * @param options Optional. An object literal that contains one or more of the following properties.
-         *        asyncContext: Developers can provide any object they wish to access in the callback method.
-         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+        * [Api set: Mailbox Preview]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Compose or read
+        * 
+        * In addition to this signature, the method also has the following signature:
+        * 
+        * `removeHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;`
+        * 
+        * @param eventType The event that should invoke the handler.
+        * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to removeHandlerAsync.
+        * @param options Optional. An object literal that contains one or more of the following properties.
+        *        asyncContext: Developers can provide any object they wish to access in the callback method.
+        * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+        * 
+        * @beta
         */
        removeHandlerAsync(eventType:EventType, handler: any, options?: any, callback?: (result: AsyncResult) => void): void;
 
@@ -6957,22 +9103,26 @@ declare namespace Office {
         * 
         * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
         * 
-         * [Api set: Mailbox Preview]
-         *
-         * @remarks
-         *
-         * Minimum permission level: ReadItem
-         *
-         * Applicable Outlook mode: Compose or read
-         * 
-         * @param eventType The event that should invoke the handler.
-         * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to removeHandlerAsync.
-         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+        * [Api set: Mailbox Preview]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Compose or read
+        * 
+        * @param eventType The event that should invoke the handler.
+        * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to removeHandlerAsync.
+        * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+        * 
+        * @beta
         */
        removeHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;
     }
     /**
-     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of Office.context.mailbox.item. Refer to the [Object Model pages for more information](https://review.docs.microsoft.com/en-us/javascript/office/objectmodel/preview-requirement-set/office-item?branch=AlexJ-OMPreservation).
+     * The compose mode of {@link Office.Item | Office.context.mailbox.item}.
+     * 
+     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of `Office.context.mailbox.item`. Refer to the Object Model pages for more information.
      */
     interface ItemCompose extends Item {
         /**
@@ -6980,15 +9130,13 @@ declare namespace Office {
          *
          * The subject property gets or sets the entire subject of the item, as sent by the email server.
          *
-         * *Compose mode*
-         *
          * The subject property returns a Subject object that provides methods to get and set the subject.
          *
          * [Api set: Mailbox 1.0]
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -7003,7 +9151,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7014,6 +9162,14 @@ declare namespace Office {
          * FileTypeNotSupported - The attachment has an extension that is not allowed.
          *
          * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `addFileAttachmentAsync(uri: string, attachmentName: string): void;`
+         * 
+         * `addFileAttachmentAsync(uri: string, attachmentName: string, options: AsyncContextOptions): void;`
+         * 
+         * `addFileAttachmentAsync(uri: string, attachmentName: string, callback: (result: AsyncResult) => void): void;`
          *
          * @param uri The URI that provides the location of the file to attach to the message or appointment. The maximum length is 2048 characters.
          * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
@@ -7033,7 +9189,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7059,7 +9215,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7088,7 +9244,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7118,13 +9274,21 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
          * Errors:
          *
          * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         * 
+         * In addition to the main signature, this method also has these signatures:
+         * 
+         * `addItemAttachmentAsync(itemId: any, attachmentName: string): void;`
+         * 
+         * `addItemAttachmentAsync(itemId: any, attachmentName: string, options: AsyncContextOptions): void;`
+         * 
+         * `addItemAttachmentAsync(itemId: any, attachmentName: string, callback: (result: AsyncResult) => void): void;`
          *
          * @param itemId The Exchange identifier of the item to attach. The maximum length is 100 characters.
          * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
@@ -7145,7 +9309,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7169,7 +9333,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7195,7 +9359,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7222,7 +9386,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: Restricted
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
          *
          * Applicable Outlook mode: Compose
          */
@@ -7231,20 +9395,22 @@ declare namespace Office {
          * Gets initialization data passed when the add-in is activated by an actionable message.
          *
          * Note: This method is only supported by Outlook 2016 for Windows (Click-to-Run versions greater than 16.0.8413.1000) and Outlook on the web for Office 365.
-         *
+         * 
          * [Api set: Mailbox Preview]
          *
          * @remarks
          *
-         * More information on [actionable messages](https://docs.microsoft.com/outlook/actionable-messages/invoke-add-in-from-actionable-message).
+         * More information on {@link https://docs.microsoft.com/outlook/actionable-messages/invoke-add-in-from-actionable-message | actionable messages}.
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          *
          * @param options Optional. An object literal that contains one or more of the following properties.
          *        asyncContext: Developers can provide any object they wish to access in the callback method.
          * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. On success, the initialization data is provided in the asyncResult.value property as a string. If there is no initialization context, the asyncResult object will contain an Error object with its code property set to 9020 and its name property set to GenericResponseError.
+         *
+         * @beta
          */
         getInitializationContextAsync(options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
         /**
@@ -7261,7 +9427,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7283,7 +9449,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7302,11 +9468,19 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
          * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `removeAttachmentAsync(attachmentIndex: string): void;`
+         * 
+         * `removeAttachmentAsync(attachmentIndex: string, options: AsyncContextOptions): void;`
+         * 
+         * `removeAttachmentAsync(attachmentIndex: string, callback: (result: AsyncResult) => void): void;`
          *
          * @param attachmentIndex The identifier of the attachment to remove. The maximum length of the string is 100 characters.
          * @param options Optional. An object literal that contains one or more of the following properties.
@@ -7323,7 +9497,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7341,7 +9515,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7361,7 +9535,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7391,11 +9565,19 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
          * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `saveAsync(): void;`
+         * 
+         * `saveAsync(options: AsyncContextOptions): void;`
+         * 
+         * `saveAsync(callback: (result: AsyncResult) => void): void;`
          *
          * @param options Optional. An object literal that contains one or more of the following properties.
          *        asyncContext: Developers can provide any object they wish to access in the callback method.
@@ -7421,7 +9603,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7448,7 +9630,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7477,7 +9659,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7495,11 +9677,19 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
          * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `setSelectedDataAsync(data: string): void;`
+         * 
+         * `setSelectedDataAsync(data: string, options: AsyncContextOptions & CoercionTypeOptions): void;`
+         * 
+         * `setSelectedDataAsync(data: string, callback: (result: AsyncResult) => void): void;`
          *
          * @param data The data to be inserted. Data is not to exceed 1,000,000 characters. If more than 1,000,000 characters are passed in, an ArgumentOutOfRange exception is thrown.
          * @param options Optional. An object literal that contains one or more of the following properties.
@@ -7517,7 +9707,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7535,7 +9725,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7556,7 +9746,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -7568,33 +9758,29 @@ declare namespace Office {
         setSelectedDataAsync(data: string, callback: (result: AsyncResult) => void): void;
     }
     /**
-     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of Office.context.mailbox.item. Refer to the [Object Model pages for more information](https://review.docs.microsoft.com/en-us/javascript/office/objectmodel/preview-requirement-set/office-item?branch=AlexJ-OMPreservation).
+     * The read mode of {@link Office.Item | Office.context.mailbox.item}.
+     * 
+     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of `Office.context.mailbox.item`. Refer to the Object Model pages for more information.
      */
     interface ItemRead extends Item {
         /**
-         * Gets an array of attachments for the item. Read mode only.
+         * Gets an array of attachments for the item.
          *
          * [Api set: Mailbox 1.0]
          *
          * @remarks
          *
-         * Note: Certain types of files are blocked by Outlook due to potential security issues and are therefore not returned. For more information, see [Blocked attachments in Outlook](https://support.office.com/article/Blocked-attachments-in-Outlook-434752E1-02D3-4E90-9124-8B81E49A8519).
+         * Note: Certain types of files are blocked by Outlook due to potential security issues and are therefore not returned. For more information, see {@link https://support.office.com/article/Blocked-attachments-in-Outlook-434752E1-02D3-4E90-9124-8B81E49A8519 | Blocked attachments in Outlook}.
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          *
          */
         attachments: AttachmentDetails[];
         /**
-         * Gets the Exchange Web Services item class of the selected item. Read mode only.
+         * Gets the Exchange Web Services item class of the selected item.
          *
-         * The itemClass property specifies the message class of the selected item. The following are the default message classes for the message or appointment item.
-         *
-         * [div class="mx-tdBreakAll"|Type|Description|item class|
-         * |-----------|------------|------------|
-         * |Appointment items|These are calendar items of the item class IPM.Appointment or IPM.Appointment.Occurence.|IPM.Appointment,IPM.Appointment.Occurence|
-         * |Message items|These include email messages that have the default message class IPM.Note, and meeting requests, responses, and cancellations, that use IPM.Schedule.Meeting as the base message class.|IPM.Note,IPM.Schedule.Meeting.Request,IPM.Schedule.Meeting.Neg,IPM.Schedule.Meeting.Pos,IPM.Schedule.Meeting.Tent,IPM.Schedule.Meeting.Canceled|
          *
          * You can create custom message classes that extends a default message class, for example, a custom appointment message class IPM.Appointment.Contoso.
          *
@@ -7602,13 +9788,33 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
+         * 
+         * The itemClass property specifies the message class of the selected item. The following are the default message classes for the message or appointment item.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Type</th>
+         *     <th>Description</th>
+         *     <th>Item Class</th>
+         *   </tr>
+         *   <tr>
+         *     <td>Appointment items</td>
+         *     <td>These are calendar items of the item class IPM.Appointment or IPM.Appointment.Occurence.</td>
+         *     <td>IPM.Appointment,IPM.Appointment.Occurence</td>
+         *   </tr>
+         *   <tr>
+         *     <td>Message items</td>
+         *     <td>These include email messages that have the default message class IPM.Note, and meeting requests, responses, and cancellations, that use IPM.Schedule.Meeting as the base message class.</td>
+         *     <td>IPM.Note,IPM.Schedule.Meeting.Request,IPM.Schedule.Meeting.Neg,IPM.Schedule.Meeting.Pos,IPM.Schedule.Meeting.Tent,IPM.Schedule.Meeting.Canceled</td>
+         *   </tr>
+         * </table>
          */
         itemClass: string;
         /**
-         * Gets the Exchange Web Services item identifier for the current item. Read mode only.
+         * Gets the Exchange Web Services item identifier for the current item.
          *
          * The itemId property is not available in compose mode. If an item identifier is required, the saveAsync method can be used to save the item to the store, which will return the item identifier in the AsyncResult.value parameter in the callback function.
          *
@@ -7618,13 +9824,13 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          */
         itemId: string;
         /**
-         * Gets the subject of an item, with all prefixes removed (including RE: and FWD:). Read mode only.
+         * Gets the subject of an item, with all prefixes removed (including RE: and FWD:).
          *
          * The normalizedSubject property gets the subject of the item, with any standard prefixes (such as RE: and FW:) that are added by email programs. To get the subject of the item with the prefixes intact, use the subject property.
          *
@@ -7632,17 +9838,15 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          */
         normalizedSubject: string;
         /**
-         * Gets or sets the description that appears in the subject field of an item.
+         * Gets the description that appears in the subject field of an item.
          *
          * The subject property gets or sets the entire subject of the item, as sent by the email server.
-         *
-         * *Read mode*
          *
          * The subject property returns a string. Use the normalizedSubject property to get the subject minus any leading prefixes such as RE: and FW:.
          *
@@ -7650,7 +9854,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -7669,20 +9873,13 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          *
          * @param formData A string that contains text and HTML and that represents the body of the reply form. The string is limited to 32 KB
          *  OR
-         * An object that contains body or attachment data and a callback function
-         *        htmlBody: A string that contains text and HTML and that represents the body of the reply form. The string is limited to 32 KB.
-         *        attachments: An array of JSON objects that are either file or item attachments.
-         *        attachments.type: Indicates the type of attachment. Must be file for a file attachment or item for an item attachment.
-         *        attachments.name: A string that contains the name of the attachment, up to 255 characters in length.
-         *        attachments.url: Only used if type is set to file. The URI of the location for the file.
-         *        attachments.isLine: Only used if type is set to file. If true, indicates that the attachment will be shown inline in the message body, and should not be displayed in the attachment list.
-         *        attachments.itemId: Only used if type is set to item. The EWS item id of the attachment. This is a string up to 100 characters.
+         * An {@link Office.ReplyFormData} object that contains body or attachment data and a callback function
          */
         displayReplyAllForm(formData: string | ReplyFormData): void;
         /**
@@ -7700,54 +9897,55 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          *
          * @param formData A string that contains text and HTML and that represents the body of the reply form. The string is limited to 32 KB.
          * OR
-         * An object that contains body or attachment data and a callback function. The object is defined as follows.
-         *        htmlBody: A string that contains text and HTML and that represents the body of the reply form. The string is limited to 32 KB.
-         *        attachments: An array of JSON objects that are either file or item attachments.
-         *        attachments.type: Indicates the type of attachment. Must be file for a file attachment or item for an item attachment.
-         *        attachments.name: A string that contains the name of the attachment, up to 255 characters in length.
-         *        attachments.url: Only used if type is set to file. The URI of the location for the file.
-         *        attachments.isLine: Only used if type is set to file. If true, indicates that the attachment will be shown inline in the message body, and should not be displayed in the attachment list.
-         *        attachments.itemId: Only used if type is set to item. The EWS item id of the attachment. This is a string up to 100 characters.
+         * An {@link Office.ReplyFormData} object that contains body or attachment data and a callback function.
          */
         displayReplyForm(formData: string | ReplyFormData): void;
         /**
-         * Gets initialization data passed when the add-in is [activated by an actionable message](https://docs.microsoft.com/outlook/actionable-messages/invoke-add-in-from-actionable-message).
+         * Gets initialization data passed when the add-in is {@link https://docs.microsoft.com/outlook/actionable-messages/invoke-add-in-from-actionable-message | activated by an actionable message}.
          * 
          * Note: This method is only supported by Outlook 2016 for Windows (Click-to-Run versions greater than 16.0.8413.1000) and Outlook on the web for Office 365.
-         *
+         * 
          * [Api set: Mailbox Preview]
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
+         * 
+         * In addition to this signature, the method also has the following signature:
+         * 
+         * `getInitializationContextAsync(callback?: (result: AsyncResult) => void): void;`
          * 
          * @param options Optional. An object literal that contains one or more of the following properties.
          *        asyncContext: Developers can provide any object they wish to access in the callback method.
          * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object. On success, the initialization data is provided in the asyncResult.value property as a string. If there is no initialization context, the asyncResult object will contain an Error object with its code property set to 9020 and its name property set to GenericResponseError.
+         *
+         * @beta
          */
         getInitializationContextAsync(options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
         /**
-         * Gets initialization data passed when the add-in is [activated by an actionable message](https://docs.microsoft.com/outlook/actionable-messages/invoke-add-in-from-actionable-message).
+         * Gets initialization data passed when the add-in is {@link https://docs.microsoft.com/outlook/actionable-messages/invoke-add-in-from-actionable-message | activated by an actionable message}.
          * 
          * Note: This method is only supported by Outlook 2016 for Windows (Click-to-Run versions greater than 16.0.8413.1000) and Outlook on the web for Office 365.
-         *
+         * 
          * [Api set: Mailbox Preview]
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          * 
          * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object. On success, the initialization data is provided in the asyncResult.value property as a string. If there is no initialization context, the asyncResult object will contain an Error object with its code property set to 9020 and its name property set to GenericResponseError.
+         *
+         * @beta
          */
         getInitializationContextAsync(callback?: (result: AsyncResult) => void): void;
         /**
@@ -7759,7 +9957,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          */
@@ -7770,27 +9968,61 @@ declare namespace Office {
          * Note: This method is not supported in Outlook for iOS or Outlook for Android.
          *
          * [Api set: Mailbox 1.0]
+         * 
+         * @param entityType One of the EntityType enumeration values.
          *
          * @returns
          * If the value passed in entityType is not a valid member of the EntityType enumeration, the method returns null. If no entities of the specified type are present on the item, the method returns an empty array. Otherwise, the type of the objects in the returned array depends on the type of entity requested in the entityType parameter.
          *
-         * While the minimum permission level to use this method is Restricted, some entity types require ReadItem to access, as specified in the following table.
-         * |Value of entityType|Type of objects in returned array|Required Permission Level|
-         * |-------|-----------|----------|
-         * |Address|String|Restricted|
-         * |Contact|Contact|ReadItem|
-         * |EmailAddress|String|ReadItem|
-         * |MeetingSuggestion|MeetingSuggestion|ReadItem|
-         * |PhoneNumber|PhoneNumber|Restricted|
-         * |TaskSuggestion|TaskSuggestion|ReadItem|
-         * |URL|String|Restricted|
-         *
          * @remarks
-         * Minimum permission level: Restricted
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
          *
          * Applicable Outlook mode: Read
-         *
-         * @param entityType One of the EntityType enumeration values.
+         * 
+         * While the minimum permission level to use this method is Restricted, some entity types require ReadItem to access, as specified in the following table.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Value of entityType</th>
+         *     <th>Type of objects in returned array</th>
+         *     <th>Required Permission Leve</th>
+         *   </tr>
+         *   <tr>
+         *     <td>Address</td>
+         *     <td>String</td>
+         *     <td>Restricted</td>
+         *   </tr>
+         *   <tr>
+         *     <td>Contact</td>
+         *     <td>Contact</td>
+         *     <td>ReadItem</td>
+         *   </tr>
+         *   <tr>
+         *     <td>EmailAddress</td>
+         *     <td>String</td>
+         *     <td>ReadItem</td>
+         *   </tr>
+         *   <tr>
+         *     <td>MeetingSuggestion</td>
+         *     <td>MeetingSuggestion</td>
+         *     <td>ReadItem</td>
+         *   </tr>
+         *   <tr>
+         *     <td>PhoneNumber</td>
+         *     <td>PhoneNumber</td>
+         *     <td>Restricted</td>
+         *   </tr>
+         *   <tr>
+         *     <td>TaskSuggestion</td>
+         *     <td>TaskSuggestion</td>
+         *     <td>ReadItem</td>
+         *   </tr>
+         *   <tr>
+         *     <td>URL</td>
+         *     <td>String</td>
+         *     <td>Restricted</td>
+         *   </tr>
+         * </table>
          */
         getEntitiesByType(entityType: Office.MailboxEnums.EntityType): (string | Contact | MeetingSuggestion | PhoneNumber | TaskSuggestion)[];
         /**
@@ -7804,7 +10036,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          *
@@ -7828,7 +10060,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          */
@@ -7849,7 +10081,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          *
@@ -7865,7 +10097,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          *
@@ -7888,14 +10120,16 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          */
         getSelectedRegExMatches(): any;
     }
     /**
-     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of Office.context.mailbox.item. Refer to the [Object Model pages for more information](https://review.docs.microsoft.com/en-us/javascript/office/objectmodel/preview-requirement-set/office-item?branch=AlexJ-OMPreservation).
+     * A subclass of {@link Office.Item} for messages.
+     * 
+     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of `Office.context.mailbox.item`. Refer to the Object Model pages for more information.
      */
     interface Message extends Item {
         /**
@@ -7909,42 +10143,43 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
         conversationId: string;
     }
-    /**
-     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of Office.context.mailbox.item. Refer to the [Object Model pages for more information](https://review.docs.microsoft.com/en-us/javascript/office/objectmodel/preview-requirement-set/office-item?branch=AlexJ-OMPreservation).
+
+     /**
+     * The message compose mode of {@link Office.Item | Office.context.mailbox.item}.
+     * 
+     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of `Office.context.mailbox.item`. Refer to the Object Model pages for more information.
      */
     interface MessageCompose extends Message, ItemCompose {
         /**
-         * Gets an object that provides methods to get or update the recipients on the Bcc (blind carbon copy) line of a message. Compose mode only.
+         * Gets an object that provides methods to get or update the recipients on the Bcc (blind carbon copy) line of a message.
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Compose
+         * Applicable Outlook mode: Message Compose
          */
         bcc: Recipients;
         /**
          * Provides access to the Cc (carbon copy) recipients of a message. The type of object and level of access depends on the mode of the current item.
          *
-         * *Compose mode*
-         *
-         * The cc property returns a Recipients object that provides methods to get or update the recipients on the Cc line of the message.
+         * The cc property returns a {@link Office.Recipients} object that provides methods to get or update the recipients on the Cc line of the message.
          *
          * [Api set: Mailbox 1.0]
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Compose or read
+         * Applicable Outlook mode: Message Compose
          */
         cc: Recipients;
         /**
@@ -7953,20 +10188,20 @@ declare namespace Office {
          * The from and sender properties represent the same person unless the message is sent by a delegate. In that case, the from property represents the delegator, and the sender property represents the delegate.
          *
          * The from property returns a From object that provides a method to get the from value.
-         *
+         * 
          * [Api set: Mailbox Preview]
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Read
+         * Applicable Outlook mode: Message Compose
+         *
+         * @beta
          */
         from: From;
         /**
          * Provides access to the recipients on the To line of a message. The type of object and level of access depends on the mode of the current item.
-         *
-         * *Compose mode*
          *
          * The to property returns a Recipients object that provides methods to get or update the recipients on the To line of the message.
          *
@@ -7974,20 +10209,877 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Compose or read
+         * Applicable Outlook mode: Message Compose
          */
         to: Recipients;
+
+        // Repeated Item Fields //
+
+        /**
+         * Gets an object that provides methods for manipulating the body of an item.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Compose
+         */
+        body: Body;
+        /**
+         * Gets the date and time that an item was created. Read mode only.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Compose
+         */
+        dateTimeCreated: Date;
+        /**
+         * Gets the date and time that an item was last modified. Read mode only.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * Note: This member is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Compose
+         */
+        dateTimeModifed: Date;
+        /**
+         * Gets the type of item that an instance represents.
+         *
+         * The itemType property returns one of the ItemType enumeration values, indicating whether the item object instance is a message or an appointment.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Compose
+         */
+        itemType: Office.MailboxEnums.ItemType;
+        /**
+         * Gets the notification messages for an item.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Compose
+         */
+        notificationMessages: NotificationMessages;
+
+        /**
+         * Gets or sets the recurrence pattern of an appointment. Gets the recurrence pattern of a meeting request. Read and compose modes for appointment items. Read mode for meeting request items.
+         * 
+         * The recurrence property returns a recurrence object for recurring appointments or meetings requests if an item is a series or an instance in a series. null is returned for single appointments and meeting requests of single appointments. undefined is returned for messages that are not meeting requests.
+         * 
+         * Note: Meeting requests have an itemClass value of IPM.Schedule.Meeting.Request.
+         * 
+         * Note: If the recurrence object is null, this indicates that the object is a single appointment or a meeting request of a single appointment and NOT a part of a series.
+         * 
+         * [Api set: Mailbox Preview]
+         * 
+         * @remarks
+         * 
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         * 
+         * Applicable Outlook mode: Message Compose
+         * 
+         * @beta
+         */
+        recurrence: Recurrence;
+
+        /**
+         * Gets the id of the series that an instance belongs to.
+         * 
+         * In OWA and Outlook, the seriesId returns the Exchange Web Services (EWS) ID of the parent (series) item that this item belongs to. However, in iOS and Android, the seriesId returns the REST ID of the parent item.
+         * 
+         * Note: The identifier returned by the seriesId property is the same as the Exchange Web Services item identifier. The seriesId property is not identical to the Outlook IDs used by the Outlook REST API. Before making REST API calls using this value, it should be converted using Office.context.mailbox.convertToRestId. For more details, see {@link https://docs.microsoft.com/outlook/add-ins/use-rest-api | Use the Outlook REST APIs from an Outlook add-in}.
+         * 
+         * The seriesId property returns null for items that do not have parent items such as single appointments, series items, or meeting requests and returns undefined for any other items that are not meeting requests.
+         * 
+         * [Api set: Mailbox Preview]
+         * 
+         * @remarks
+         * 
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         * 
+         * Applicable Outlook mode: Message Compose
+         * 
+         * @beta
+         */
+        seriesId: string;
+
+        /**
+         * Adds an event handler for a supported event.
+         * 
+         * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Compose
+         * 
+         * In addition to this signature, the method also has the following signature:
+         * 
+         * `addHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;`
+         * 
+         * @param eventType The event that should invoke the handler.
+         * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to addHandlerAsync.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+         * 
+         * @beta
+         */
+        addHandlerAsync(eventType:EventType, handler: any, options?: any, callback?: (result: AsyncResult) => void): void;
+
+        /**
+         * Adds an event handler for a supported event.
+         * 
+         * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Compose
+         * 
+         * @param eventType The event that should invoke the handler.
+         * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to addHandlerAsync.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+         * 
+         * @beta
+         */
+        addHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;
+
+       /**
+        * Asynchronously loads custom properties for this add-in on the selected item.
+        *
+        * Custom properties are stored as key/value pairs on a per-app, per-item basis. This method returns a CustomProperties object in the callback, which provides methods to access the custom properties specific to the current item and the current add-in. Custom properties are not encrypted on the item, so this should not be used as secure storage.
+        *
+        * The custom properties are provided as a CustomProperties object in the asyncResult.value property. This object can be used to get, set, and remove custom properties from the item and save changes to the custom property set back to the server.
+        *
+        * [Api set: Mailbox 1.0]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Message Compose
+        *
+        * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
+        * @param userContext Optional. Developers can provide any object they wish to access in the callback function. This object can be accessed by the asyncResult.asyncContext property in the callback function.
+        */
+       loadCustomPropertiesAsync(callback: (result: AsyncResult) => void, userContext?: any): void;
+
+       /**
+        * Removes an event handler for a supported event.
+        * 
+        * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+        * 
+        * [Api set: Mailbox Preview]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Message Compose
+        * 
+        * In addition to this signature, the method also has the following signature:
+        * 
+        * `removeHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;`
+        * 
+        * @param eventType The event that should invoke the handler.
+        * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to removeHandlerAsync.
+        * @param options Optional. An object literal that contains one or more of the following properties.
+        *        asyncContext: Developers can provide any object they wish to access in the callback method.
+        * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+        * 
+        * @beta
+        */
+       removeHandlerAsync(eventType:EventType, handler: any, options?: any, callback?: (result: AsyncResult) => void): void;
+
+       /**
+        * Removes an event handler for a supported event.
+        * 
+        * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+        * 
+        * [Api set: Mailbox Preview]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Message Compose
+        * 
+        * @param eventType The event that should invoke the handler.
+        * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to removeHandlerAsync.
+        * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+        * 
+        * @beta
+        */
+       removeHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;
+
+       /**
+         * Gets or sets the description that appears in the subject field of an item.
+         *
+         * The subject property gets or sets the entire subject of the item, as sent by the email server.
+         *
+         * The subject property returns a Subject object that provides methods to get and set the subject.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Compose
+         */
+        subject: Subject;
+        /**
+         * Adds a file to a message or appointment as an attachment.
+         *
+         * The addFileAttachmentAsync method uploads the file at the specified URI and attaches it to the item in the compose form.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors:
+         *
+         * AttachmentSizeExceeded - The attachment is larger than allowed.
+         *
+         * FileTypeNotSupported - The attachment has an extension that is not allowed.
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `addFileAttachmentAsync(uri: string, attachmentName: string): void;`
+         * 
+         * `addFileAttachmentAsync(uri: string, attachmentName: string, options: AsyncContextOptions): void;`
+         * 
+         * `addFileAttachmentAsync(uri: string, attachmentName: string, callback: (result: AsyncResult) => void): void;`
+         *
+         * @param uri The URI that provides the location of the file to attach to the message or appointment. The maximum length is 2048 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         *        inInline: If true, indicates that the attachment will be shown inline in the message body, and should not be displayed in the attachment list.
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type asyncResult. On success, the attachment identifier will be provided in the asyncResult.value property. If uploading the attachment fails, the asyncResult object will contain an Error object that provides a description of the error.
+         */
+        addFileAttachmentAsync(uri: string, attachmentName: string, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+        /**
+         * Adds a file to a message or appointment as an attachment.
+         *
+         * The addFileAttachmentAsync method uploads the file at the specified URI and attaches it to the item in the compose form.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors:
+         *
+         * AttachmentSizeExceeded - The attachment is larger than allowed.
+         *
+         * FileTypeNotSupported - The attachment has an extension that is not allowed.
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         *
+         * @param uri The URI that provides the location of the file to attach to the message or appointment. The maximum length is 2048 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         */
+        addFileAttachmentAsync(uri: string, attachmentName: string): void;
+        /**
+         * Adds a file to a message or appointment as an attachment.
+         *
+         * The addFileAttachmentAsync method uploads the file at the specified URI and attaches it to the item in the compose form.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors:
+         *
+         * AttachmentSizeExceeded - The attachment is larger than allowed.
+         *
+         * FileTypeNotSupported - The attachment has an extension that is not allowed.
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         *
+         * @param uri The URI that provides the location of the file to attach to the message or appointment. The maximum length is 2048 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         *        inInline: If true, indicates that the attachment will be shown inline in the message body, and should not be displayed in the attachment list.
+         */
+        addFileAttachmentAsync(uri: string, attachmentName: string, options: AsyncContextOptions): void;
+        /**
+         * Adds a file to a message or appointment as an attachment.
+         *
+         * The addFileAttachmentAsync method uploads the file at the specified URI and attaches it to the item in the compose form.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors:
+         *
+         * AttachmentSizeExceeded - The attachment is larger than allowed.
+         *
+         * FileTypeNotSupported - The attachment has an extension that is not allowed.
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         *
+         * @param uri The URI that provides the location of the file to attach to the message or appointment. The maximum length is 2048 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type asyncResult. On success, the attachment identifier will be provided in the asyncResult.value property. If uploading the attachment fails, the asyncResult object will contain an Error object that provides a description of the error.
+         */
+        addFileAttachmentAsync(uri: string, attachmentName: string, callback: (result: AsyncResult) => void): void;
+
+        /**
+         * Adds an Exchange item, such as a message, as an attachment to the message or appointment.
+         *
+         * The addItemAttachmentAsync method attaches the item with the specified Exchange identifier to the item in the compose form. If you specify a callback method, the method is called with one parameter, asyncResult, which contains either the attachment identifier or a code that indicates any error that occurred while attaching the item. You can use the options parameter to pass state information to the callback method, if needed.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * If your Office add-in is running in Outlook Web App, the addItemAttachmentAsync method can attach items to items other than the item that you are editing; however, this is not supported and is not recommended.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors:
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         * 
+         * In addition to the main signature, this method also has these signatures:
+         * 
+         * `addItemAttachmentAsync(itemId: any, attachmentName: string): void;`
+         * 
+         * `addItemAttachmentAsync(itemId: any, attachmentName: string, options: AsyncContextOptions): void;`
+         * 
+         * `addItemAttachmentAsync(itemId: any, attachmentName: string, callback: (result: AsyncResult) => void): void;`
+         *
+         * @param itemId The Exchange identifier of the item to attach. The maximum length is 100 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         * @param options An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. On success, the attachment identifier will be provided in the asyncResult.value property. If adding the attachment fails, the asyncResult object will contain an Error object that provides a description of the error.
+         */
+        addItemAttachmentAsync(itemId: any, attachmentName: string, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+        /**
+         * Adds an Exchange item, such as a message, as an attachment to the message or appointment.
+         *
+         * The addItemAttachmentAsync method attaches the item with the specified Exchange identifier to the item in the compose form. If you specify a callback method, the method is called with one parameter, asyncResult, which contains either the attachment identifier or a code that indicates any error that occurred while attaching the item. You can use the options parameter to pass state information to the callback method, if needed.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * If your Office add-in is running in Outlook Web App, the addItemAttachmentAsync method can attach items to items other than the item that you are editing; however, this is not supported and is not recommended.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors:
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         *
+         * @param itemId The Exchange identifier of the item to attach. The maximum length is 100 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         */
+        addItemAttachmentAsync(itemId: any, attachmentName: string): void;
+        /**
+         * Adds an Exchange item, such as a message, as an attachment to the message or appointment.
+         *
+         * The addItemAttachmentAsync method attaches the item with the specified Exchange identifier to the item in the compose form. If you specify a callback method, the method is called with one parameter, asyncResult, which contains either the attachment identifier or a code that indicates any error that occurred while attaching the item. You can use the options parameter to pass state information to the callback method, if needed.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * If your Office add-in is running in Outlook Web App, the addItemAttachmentAsync method can attach items to items other than the item that you are editing; however, this is not supported and is not recommended.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors:
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         *
+         * @param itemId The Exchange identifier of the item to attach. The maximum length is 100 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         * @param options An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         */
+        addItemAttachmentAsync(itemId: any, attachmentName: string, options: AsyncContextOptions): void;
+        /**
+         * Adds an Exchange item, such as a message, as an attachment to the message or appointment.
+         *
+         * The addItemAttachmentAsync method attaches the item with the specified Exchange identifier to the item in the compose form. If you specify a callback method, the method is called with one parameter, asyncResult, which contains either the attachment identifier or a code that indicates any error that occurred while attaching the item. You can use the options parameter to pass state information to the callback method, if needed.
+         *
+         * You can subsequently use the identifier with the removeAttachmentAsync method to remove the attachment in the same session.
+         *
+         * If your Office add-in is running in Outlook Web App, the addItemAttachmentAsync method can attach items to items other than the item that you are editing; however, this is not supported and is not recommended.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors:
+         *
+         * NumberOfAttachmentsExceeded - The message or appointment has too many attachments.
+         *
+         * @param itemId The Exchange identifier of the item to attach. The maximum length is 100 characters.
+         * @param attachmentName The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. On success, the attachment identifier will be provided in the asyncResult.value property. If adding the attachment fails, the asyncResult object will contain an Error object that provides a description of the error.
+         */
+        addItemAttachmentAsync(itemId: any, attachmentName: string, callback: (result: AsyncResult) => void): void;
+
+        /**
+         * Closes the current item that is being composed
+         *
+         * The behaviors of the close method depends on the current state of the item being composed. If the item has unsaved changes, the client prompts the user to save, discard, or close the action.
+         *
+         * In the Outlook desktop client, if the message is an inline reply, the close method has no effect.
+         *
+         * Note: In Outlook on the web, if the item is an appointment and it has previously been saved using saveAsync, the user is prompted to save, discard, or cancel even if no changes have occurred since the item was last saved.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
+         *
+         * Applicable Outlook mode: Message Compose
+         */
+        close(): void;
+        /**
+         * Gets initialization data passed when the add-in is activated by an actionable message.
+         *
+         * Note: This method is only supported by Outlook 2016 for Windows (Click-to-Run versions greater than 16.0.8413.1000) and Outlook on the web for Office 365.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * More information on {@link https://docs.microsoft.com/outlook/actionable-messages/invoke-add-in-from-actionable-message | actionable messages}.
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. On success, the initialization data is provided in the asyncResult.value property as a string. If there is no initialization context, the asyncResult object will contain an Error object with its code property set to 9020 and its name property set to GenericResponseError.
+         *
+         * @beta
+         */
+        getInitializationContextAsync(options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+        /**
+         * Asynchronously returns selected data from the subject or body of a message.
+         *
+         * If there is no selection but the cursor is in the body or subject, the method returns null for the selected data. If a field other than the body or subject is selected, the method returns the InvalidSelection error.
+         *
+         * To access the selected data from the callback method, call asyncResult.value.data. To access the source property that the selection comes from, call asyncResult.value.sourceProperty, which will be either body or subject.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @returns
+         * The selected data as a string with format determined by coercionType.
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * @param coercionType Requests a format for the data. If Text, the method returns the plain text as a string , removing any HTML tags present. If HTML, the method returns the selected text, whether it is plaintext or HTML.
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
+         */
+        getSelectedDataAsync(coercionType: CoercionType, callback: (result: AsyncResult) => void): void;
+        /**
+         * Asynchronously returns selected data from the subject or body of a message.
+         *
+         * If there is no selection but the cursor is in the body or subject, the method returns null for the selected data. If a field other than the body or subject is selected, the method returns the InvalidSelection error.
+         *
+         * To access the selected data from the callback method, call asyncResult.value.data. To access the source property that the selection comes from, call asyncResult.value.sourceProperty, which will be either body or subject.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @returns
+         * The selected data as a string with format determined by coercionType.
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * @param coercionType Requests a format for the data. If Text, the method returns the plain text as a string , removing any HTML tags present. If HTML, the method returns the selected text, whether it is plaintext or HTML.
+         * @param options An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
+         */
+        getSelectedDataAsync(coercionType: CoercionType, options: AsyncContextOptions, callback: (result: AsyncResult) => void): void;
+        /**
+         * Removes an attachment from a message or appointment.
+         *
+         * The removeAttachmentAsync method removes the attachment with the specified identifier from the item. As a best practice, you should use the attachment identifier to remove an attachment only if the same mail app has added that attachment in the same session. In Outlook Web App and OWA for Devices, the attachment identifier is valid only within the same session. A session is over when the user closes the app, or if the user starts composing in an inline form and subsequently pops out the inline form to continue in a separate window.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `removeAttachmentAsync(attachmentIndex: string): void;`
+         * 
+         * `removeAttachmentAsync(attachmentIndex: string, options: AsyncContextOptions): void;`
+         * 
+         * `removeAttachmentAsync(attachmentIndex: string, callback: (result: AsyncResult) => void): void;`
+         *
+         * @param attachmentIndex The identifier of the attachment to remove. The maximum length of the string is 100 characters.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. If removing the attachment fails, the asyncResult.error property will contain an error code with the reason for the failure.
+         */
+        removeAttachmentAsync(attachmentIndex: string, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+        /**
+         * Removes an attachment from a message or appointment.
+         *
+         * The removeAttachmentAsync method removes the attachment with the specified identifier from the item. As a best practice, you should use the attachment identifier to remove an attachment only if the same mail app has added that attachment in the same session. In Outlook Web App and OWA for Devices, the attachment identifier is valid only within the same session. A session is over when the user closes the app, or if the user starts composing in an inline form and subsequently pops out the inline form to continue in a separate window.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param attachmentIndex The identifier of the attachment to remove. The maximum length of the string is 100 characters.
+         */
+        removeAttachmentAsync(attachmentIndex: string): void;
+        /**
+         * Removes an attachment from a message or appointment.
+         *
+         * The removeAttachmentAsync method removes the attachment with the specified identifier from the item. As a best practice, you should use the attachment identifier to remove an attachment only if the same mail app has added that attachment in the same session. In Outlook Web App and OWA for Devices, the attachment identifier is valid only within the same session. A session is over when the user closes the app, or if the user starts composing in an inline form and subsequently pops out the inline form to continue in a separate window.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param attachmentIndex The identifier of the attachment to remove. The maximum length of the string is 100 characters.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         */
+        removeAttachmentAsync(attachmentIndex: string, options: AsyncContextOptions): void;
+        /**
+         * Removes an attachment from a message or appointment.
+         *
+         * The removeAttachmentAsync method removes the attachment with the specified identifier from the item. As a best practice, you should use the attachment identifier to remove an attachment only if the same mail app has added that attachment in the same session. In Outlook Web App and OWA for Devices, the attachment identifier is valid only within the same session. A session is over when the user closes the app, or if the user starts composing in an inline form and subsequently pops out the inline form to continue in a separate window.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param attachmentIndex The identifier of the attachment to remove. The maximum length of the string is 100 characters.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. If removing the attachment fails, the asyncResult.error property will contain an error code with the reason for the failure.
+         */
+        removeAttachmentAsync(attachmentIndex: string, callback: (result: AsyncResult) => void): void;
+
+        /**
+         * Asynchronously saves an item.
+         *
+         * When invoked, this method saves the current message as a draft and returns the item id via the callback method. In Outlook Web App or Outlook in online mode, the item is saved to the server. In Outlook in cached mode, the item is saved to the local cache.
+         *
+         * Since appointments have no draft state, if saveAsync is called on an appointment in compose mode, the item will be saved as a normal appointment on the user's calendar. For new appointments that have not been saved before, no invitation will be sent. Saving an existing appointment will send an update to added or removed attendees.
+         *
+         * Note: If your add-in calls saveAsync on an item in compose mode in order to get an itemId to use with EWS or the REST API, be aware that when Outlook is in cached mode, it may take some time before the item is actually synced to the server. Until the item is synced, using the itemId will return an error.
+         *
+         * Note: The following clients have different behavior for saveAsync on appointments in compose mode:
+         *
+         * - Mac Outlook does not support saveAsync on a meeting in compose mode. Calling saveAsync on a meeting in Mac Outlook will return an error.
+         *
+         * - Outlook on the web always sends an invitation or update when saveAsync is called on an appointment in compose mode.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `saveAsync(): void;`
+         * 
+         * `saveAsync(options: AsyncContextOptions): void;`
+         * 
+         * `saveAsync(callback: (result: AsyncResult) => void): void;`
+         *
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. If removing the attachment fails, the asyncResult.error property will contain an error code with the reason for the failure.
+         */
+        saveAsync(options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+        /**
+         * Asynchronously saves an item.
+         *
+         * When invoked, this method saves the current message as a draft and returns the item id via the callback method. In Outlook Web App or Outlook in online mode, the item is saved to the server. In Outlook in cached mode, the item is saved to the local cache.
+         *
+         * Since appointments have no draft state, if saveAsync is called on an appointment in compose mode, the item will be saved as a normal appointment on the user's calendar. For new appointments that have not been saved before, no invitation will be sent. Saving an existing appointment will send an update to added or removed attendees.
+         *
+         * Note: If your add-in calls saveAsync on an item in compose mode in order to get an itemId to use with EWS or the REST API, be aware that when Outlook is in cached mode, it may take some time before the item is actually synced to the server. Until the item is synced, using the itemId will return an error.
+         *
+         * Note: The following clients have different behavior for saveAsync on appointments in compose mode:
+         *
+         * - Mac Outlook does not support saveAsync on a meeting in compose mode. Calling saveAsync on a meeting in Mac Outlook will return an error.
+         *
+         * - Outlook on the web always sends an invitation or update when saveAsync is called on an appointment in compose mode.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         */
+        saveAsync(): void;
+        /**
+         * Asynchronously saves an item.
+         *
+         * When invoked, this method saves the current message as a draft and returns the item id via the callback method. In Outlook Web App or Outlook in online mode, the item is saved to the server. In Outlook in cached mode, the item is saved to the local cache.
+         *
+         * Since appointments have no draft state, if saveAsync is called on an appointment in compose mode, the item will be saved as a normal appointment on the user's calendar. For new appointments that have not been saved before, no invitation will be sent. Saving an existing appointment will send an update to added or removed attendees.
+         *
+         * Note: If your add-in calls saveAsync on an item in compose mode in order to get an itemId to use with EWS or the REST API, be aware that when Outlook is in cached mode, it may take some time before the item is actually synced to the server. Until the item is synced, using the itemId will return an error.
+         *
+         * Note: The following clients have different behavior for saveAsync on appointments in compose mode:
+         *
+         * - Mac Outlook does not support saveAsync on a meeting in compose mode. Calling saveAsync on a meeting in Mac Outlook will return an error.
+         *
+         * - Outlook on the web always sends an invitation or update when saveAsync is called on an appointment in compose mode.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         */
+        saveAsync(options: AsyncContextOptions): void;
+        /**
+         * Asynchronously saves an item.
+         *
+         * When invoked, this method saves the current message as a draft and returns the item id via the callback method. In Outlook Web App or Outlook in online mode, the item is saved to the server. In Outlook in cached mode, the item is saved to the local cache.
+         *
+         * Since appointments have no draft state, if saveAsync is called on an appointment in compose mode, the item will be saved as a normal appointment on the user's calendar. For new appointments that have not been saved before, no invitation will be sent. Saving an existing appointment will send an update to added or removed attendees.
+         *
+         * Note: If your add-in calls saveAsync on an item in compose mode in order to get an itemId to use with EWS or the REST API, be aware that when Outlook is in cached mode, it may take some time before the item is actually synced to the server. Until the item is synced, using the itemId will return an error.
+         *
+         * Note: The following clients have different behavior for saveAsync on appointments in compose mode:
+         *
+         * - Mac Outlook does not support saveAsync on a meeting in compose mode. Calling saveAsync on a meeting in Mac Outlook will return an error.
+         *
+         * - Outlook on the web always sends an invitation or update when saveAsync is called on an appointment in compose mode.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. If removing the attachment fails, the asyncResult.error property will contain an error code with the reason for the failure.
+         */
+        saveAsync(callback: (result: AsyncResult) => void): void;
+        /**
+         * Asynchronously inserts data into the body or subject of a message.
+         *
+         * The setSelectedDataAsync method inserts the specified string at the cursor location in the subject or body of the item, or, if text is selected in the editor, it replaces the selected text. If the cursor is not in the body or subject field, an error is returned. After insertion, the cursor is placed at the end of the inserted content.
+         *
+         * [Api set: Mailbox 1.2]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `setSelectedDataAsync(data: string): void;`
+         * 
+         * `setSelectedDataAsync(data: string, options: AsyncContextOptions & CoercionTypeOptions): void;`
+         * 
+         * `setSelectedDataAsync(data: string, callback: (result: AsyncResult) => void): void;`
+         *
+         * @param data The data to be inserted. Data is not to exceed 1,000,000 characters. If more than 1,000,000 characters are passed in, an ArgumentOutOfRange exception is thrown.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         *        coercionType: If text, the current style is applied in Outlook Web App and Outlook. If the field is an HTML editor, only the text data is inserted, even if the data is HTML. If html and the field supports HTML (the subject doesn't), the current style is applied in Outlook Web App and the default style is applied in Outlook. If the field is a text field, an InvalidDataFormat error is returned. If coercionType is not set, the result depends on the field: if the field is HTML then HTML is used; if the field is text, then plain text is used.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. If removing the attachment fails, the asyncResult.error property will contain an error code with the reason for the failure.
+         */
+        setSelectedDataAsync(data: string, options?: AsyncContextOptions & CoercionTypeOptions, callback?: (result: AsyncResult) => void): void;
+        /**
+         * Asynchronously inserts data into the body or subject of a message.
+         *
+         * The setSelectedDataAsync method inserts the specified string at the cursor location in the subject or body of the item, or, if text is selected in the editor, it replaces the selected text. If the cursor is not in the body or subject field, an error is returned. After insertion, the cursor is placed at the end of the inserted content.
+         *
+         * [Api set: Mailbox 1.2]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param data The data to be inserted. Data is not to exceed 1,000,000 characters. If more than 1,000,000 characters are passed in, an ArgumentOutOfRange exception is thrown.
+         */
+        setSelectedDataAsync(data: string): void;
+        /**
+         * Asynchronously inserts data into the body or subject of a message.
+         *
+         * The setSelectedDataAsync method inserts the specified string at the cursor location in the subject or body of the item, or, if text is selected in the editor, it replaces the selected text. If the cursor is not in the body or subject field, an error is returned. After insertion, the cursor is placed at the end of the inserted content.
+         *
+         * [Api set: Mailbox 1.2]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param data The data to be inserted. Data is not to exceed 1,000,000 characters. If more than 1,000,000 characters are passed in, an ArgumentOutOfRange exception is thrown.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         *        coercionType: If text, the current style is applied in Outlook Web App and Outlook. If the field is an HTML editor, only the text data is inserted, even if the data is HTML. If html and the field supports HTML (the subject doesn't), the current style is applied in Outlook Web App and the default style is applied in Outlook. If the field is a text field, an InvalidDataFormat error is returned. If coercionType is not set, the result depends on the field: if the field is HTML then HTML is used; if the field is text, then plain text is used.
+         */
+        setSelectedDataAsync(data: string, options: AsyncContextOptions & CoercionTypeOptions): void;
+        /**
+         * Asynchronously inserts data into the body or subject of a message.
+         *
+         * The setSelectedDataAsync method inserts the specified string at the cursor location in the subject or body of the item, or, if text is selected in the editor, it replaces the selected text. If the cursor is not in the body or subject field, an error is returned. After insertion, the cursor is placed at the end of the inserted content.
+         *
+         * [Api set: Mailbox 1.2]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
+         *
+         * Applicable Outlook mode: Message Compose
+         *
+         * Errors: InvalidAttachmentId - The attachment identifier does not exist.
+         *
+         * @param data The data to be inserted. Data is not to exceed 1,000,000 characters. If more than 1,000,000 characters are passed in, an ArgumentOutOfRange exception is thrown.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. If removing the attachment fails, the asyncResult.error property will contain an error code with the reason for the failure.
+         */
+        setSelectedDataAsync(data: string, callback: (result: AsyncResult) => void): void;
     }
     /**
-     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of Office.context.mailbox.item. Refer to the [Object Model pages for more information](https://review.docs.microsoft.com/en-us/javascript/office/objectmodel/preview-requirement-set/office-item?branch=AlexJ-OMPreservation).
+     * The message read mode of {@link Office.Item | Office.context.mailbox.item}.
+     * 
+     * Important: This is an internal Outlook object, not directly exposed through existing interfaces. You should treat this as a mode of Office.context.mailbox.item. Refer to the Object Model pages for more information.
      */
     interface MessageRead extends Message, ItemRead {
         /**
          * Provides access to the Cc (carbon copy) recipients of a message. The type of object and level of access depends on the mode of the current item.
-         *
-         * *Read mode*
          *
          * The cc property returns an array that contains an EmailAddressDetails object for each recipient listed on the Cc line of the message. The collection is limited to a maximum of 100 members.
          *
@@ -7995,9 +11087,9 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Compose or read
+         * Applicable Outlook mode: Message Read
          */
         cc: EmailAddressDetails[];
         /**
@@ -8013,25 +11105,25 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Read
+         * Applicable Outlook mode: Message Read
          */
         from: EmailAddressDetails;
         /**
-         * Gets the Internet message identifier for an email message. Read mode only.
+         * Gets the Internet message identifier for an email message.
          *
          * [Api set: Mailbox 1.0]
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Read
+         * Applicable Outlook mode: Message Read
          */
         internetMessageId: string;
         /**
-         * Gets the email address of the sender of an email message. Read mode only.
+         * Gets the email address of the sender of an email message.
          *
          * The from and sender properties represent the same person unless the message is sent by a delegate. In that case, the from property represents the delegator, and the sender property represents the delegate.
          *
@@ -8041,15 +11133,13 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
-         * Applicable Outlook mode: Read
+         * Applicable Outlook mode: Message Read
          */
         sender: EmailAddressDetails;
         /**
          * Provides access to the recipients on the To line of a message. The type of object and level of access depends on the mode of the current item.
-         *
-         * *Read mode*
          *
          * The to property returns an array that contains an EmailAddressDetails object for each recipient listed on the To line of the message. The collection is limited to a maximum of 100 members.
          *
@@ -8057,11 +11147,599 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         */
+        to: EmailAddressDetails[];
+
+        // Repeated Item Fields //
+
+        /**
+         * Gets an object that provides methods for manipulating the body of an item.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         */
+        body: Body;
+        /**
+         * Gets the date and time that an item was created. Read mode only.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         */
+        dateTimeCreated: Date;
+        /**
+         * Gets the date and time that an item was last modified. Read mode only.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * Note: This member is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         */
+        dateTimeModifed: Date;
+        /**
+         * Gets the type of item that an instance represents.
+         *
+         * The itemType property returns one of the ItemType enumeration values, indicating whether the item object instance is a message or an appointment.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         */
+        itemType: Office.MailboxEnums.ItemType;
+        /**
+         * Gets the notification messages for an item.
+         *
+         * [Api set: Mailbox 1.3]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
-        to: EmailAddressDetails[];
+        notificationMessages: NotificationMessages;
+
+        /**
+         * Gets the recurrence pattern of an appointment. Gets the recurrence pattern of a meeting request. Read and compose modes for appointment items. Read mode for meeting request items.
+         * 
+         * The recurrence property returns a recurrence object for recurring appointments or meetings requests if an item is a series or an instance in a series. null is returned for single appointments and meeting requests of single appointments. undefined is returned for messages that are not meeting requests.
+         * 
+         * Note: Meeting requests have an itemClass value of IPM.Schedule.Meeting.Request.
+         * 
+         * Note: If the recurrence object is null, this indicates that the object is a single appointment or a meeting request of a single appointment and NOT a part of a series.
+         * 
+         * [Api set: Mailbox Preview]
+         * 
+         * @remarks
+         * 
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         * 
+         * Applicable Outlook mode: Message Read
+         * 
+         * @beta
+         */
+        recurrence: Recurrence;
+
+        /**
+         * Gets the id of the series that an instance belongs to.
+         * 
+         * In OWA and Outlook, the seriesId returns the Exchange Web Services (EWS) ID of the parent (series) item that this item belongs to. However, in iOS and Android, the seriesId returns the REST ID of the parent item.
+         * 
+         * Note: The identifier returned by the seriesId property is the same as the Exchange Web Services item identifier. The seriesId property is not identical to the Outlook IDs used by the Outlook REST API. Before making REST API calls using this value, it should be converted using Office.context.mailbox.convertToRestId. For more details, see {@link https://docs.microsoft.com/outlook/add-ins/use-rest-api | Use the Outlook REST APIs from an Outlook add-in}.
+         * 
+         * The seriesId property returns null for items that do not have parent items such as single appointments, series items, or meeting requests and returns undefined for any other items that are not meeting requests.
+         * 
+         * [Api set: Mailbox Preview]
+         * 
+         * @remarks
+         * 
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         * 
+         * Applicable Outlook mode: Message Read
+         * 
+         * @beta
+         */
+        seriesId: string;
+
+        /**
+         * Adds an event handler for a supported event.
+         * 
+         * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         * 
+         * In addition to this signature, the method also has the following signature:
+         * 
+         * `addHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;`
+         * 
+         * @param eventType The event that should invoke the handler.
+         * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to addHandlerAsync.
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+         * 
+         * @beta
+         */
+        addHandlerAsync(eventType:EventType, handler: any, options?: any, callback?: (result: AsyncResult) => void): void;
+
+        /**
+         * Adds an event handler for a supported event.
+         * 
+         * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         * 
+         * @param eventType The event that should invoke the handler.
+         * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to addHandlerAsync.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+         * 
+         * @beta
+         */
+        addHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;
+
+       /**
+        * Asynchronously loads custom properties for this add-in on the selected item.
+        *
+        * Custom properties are stored as key/value pairs on a per-app, per-item basis. This method returns a CustomProperties object in the callback, which provides methods to access the custom properties specific to the current item and the current add-in. Custom properties are not encrypted on the item, so this should not be used as secure storage.
+        *
+        * The custom properties are provided as a CustomProperties object in the asyncResult.value property. This object can be used to get, set, and remove custom properties from the item and save changes to the custom property set back to the server.
+        *
+        * [Api set: Mailbox 1.0]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Message Read
+        *
+        * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
+        * @param userContext Optional. Developers can provide any object they wish to access in the callback function. This object can be accessed by the asyncResult.asyncContext property in the callback function.
+        */
+       loadCustomPropertiesAsync(callback: (result: AsyncResult) => void, userContext?: any): void;
+
+       /**
+        * Removes an event handler for a supported event.
+        * 
+        * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+        * 
+        * [Api set: Mailbox Preview]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Message Read
+        * 
+        * In addition to this signature, the method also has the following signature:
+        * 
+        * `removeHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;`
+        * 
+        * @param eventType The event that should invoke the handler.
+        * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to removeHandlerAsync.
+        * @param options Optional. An object literal that contains one or more of the following properties.
+        *        asyncContext: Developers can provide any object they wish to access in the callback method.
+        * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+        * 
+        * @beta
+        */
+       removeHandlerAsync(eventType:EventType, handler: any, options?: any, callback?: (result: AsyncResult) => void): void;
+
+       /**
+        * Removes an event handler for a supported event.
+        * 
+        * Currently the only supported event type is Office.EventType.RecurrencePatternChanged, which is invoked when the user changes the recurrence pattern of a series.
+        * 
+        * [Api set: Mailbox Preview]
+        *
+        * @remarks
+        *
+        * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+        *
+        * Applicable Outlook mode: Message Read
+        * 
+        * @param eventType The event that should invoke the handler.
+        * @param handler The function to handle the event. The function must accept a single parameter, which is an object literal. The type property on the parameter will match the eventType parameter passed to removeHandlerAsync.
+        * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+        * 
+        * @beta
+        */
+       removeHandlerAsync(eventType:EventType, handler: any, callback?: (result: AsyncResult) => void): void;
+
+        /**
+         * Gets an array of attachments for the item.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * Note: Certain types of files are blocked by Outlook due to potential security issues and are therefore not returned. For more information, see {@link https://support.office.com/article/Blocked-attachments-in-Outlook-434752E1-02D3-4E90-9124-8B81E49A8519 | Blocked attachments in Outlook}.
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         *
+         */
+        attachments: AttachmentDetails[];
+        /**
+         * Gets the Exchange Web Services item class of the selected item.
+         * 
+         * You can create custom message classes that extends a default message class, for example, a custom appointment message class IPM.Appointment.Contoso.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         * 
+         * The itemClass property specifies the message class of the selected item. The following are the default message classes for the message or appointment item.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Type</th>
+         *     <th>Description</th>
+         *     <th>Item Class</th>
+         *   </tr>
+         *   <tr>
+         *     <td>Appointment items</td>
+         *     <td>These are calendar items of the item class IPM.Appointment or IPM.Appointment.Occurence.</td>
+         *     <td>IPM.Appointment,IPM.Appointment.Occurence</td>
+         *   </tr>
+         *   <tr>
+         *     <td>Message items</td>
+         *     <td>These include email messages that have the default message class IPM.Note, and meeting requests, responses, and cancellations, that use IPM.Schedule.Meeting as the base message class.</td>
+         *     <td>IPM.Note,IPM.Schedule.Meeting.Request,IPM.Schedule.Meeting.Neg,IPM.Schedule.Meeting.Pos,IPM.Schedule.Meeting.Tent,IPM.Schedule.Meeting.Canceled</td>
+         *   </tr>
+         * </table>
+         * 
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         */
+        itemClass: string;
+        /**
+         * Gets the Exchange Web Services item identifier for the current item.
+         *
+         * The itemId property is not available in compose mode. If an item identifier is required, the saveAsync method can be used to save the item to the store, which will return the item identifier in the AsyncResult.value parameter in the callback function.
+         *
+         * Note: The identifier returned by the itemId property is the same as the Exchange Web Services item identifier. The itemId property is not identical to the Outlook Entry ID or the ID used by the Outlook REST API. Before making REST API calls using this value, it should be converted using Office.context.mailbox.convertToRestId. For more details, see Use the Outlook REST APIs from an Outlook add-in.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         */
+        itemId: string;
+        /**
+         * Gets the subject of an item, with all prefixes removed (including RE: and FWD:).
+         *
+         * The normalizedSubject property gets the subject of the item, with any standard prefixes (such as RE: and FW:) that are added by email programs. To get the subject of the item with the prefixes intact, use the subject property.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         */
+        normalizedSubject: string;
+        /**
+         * Gets the description that appears in the subject field of an item.
+         *
+         * The subject property gets or sets the entire subject of the item, as sent by the email server.
+         *
+         * The subject property returns a string. Use the normalizedSubject property to get the subject minus any leading prefixes such as RE: and FW:.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         */
+        subject: string;
+        /**
+         * Displays a reply form that includes the sender and all recipients of the selected message or the organizer and all attendees of the selected appointment.
+         *
+         * In Outlook Web App, the reply form is displayed as a pop-out form in the 3-column view and a pop-up form in the 2- or 1-column view.
+         *
+         * If any of the string parameters exceed their limits, displayReplyAllForm throws an exception.
+         *
+         * When attachments are specified in the formData.attachments parameter, Outlook and Outlook Web App attempt to download all attachments and attach them to the reply form. If any attachments fail to be added, an error is shown in the form UI. If this isn't possible, then no error message is thrown.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         *
+         * @param formData A string that contains text and HTML and that represents the body of the reply form. The string is limited to 32 KB
+         *  OR
+         * An {@link Office.ReplyFormData} object that contains body or attachment data and a callback function
+         */
+        displayReplyAllForm(formData: string | ReplyFormData): void;
+        /**
+         * Displays a reply form that includes only the sender of the selected message or the organizer of the selected appointment.
+         *
+         * In Outlook Web App, the reply form is displayed as a pop-out form in the 3-column view and a pop-up form in the 2- or 1-column view.
+         *
+         * If any of the string parameters exceed their limits, displayReplyForm throws an exception.
+         *
+         * When attachments are specified in the formData.attachments parameter, Outlook and Outlook Web App attempt to download all attachments and attach them to the reply form. If any attachments fail to be added, an error is shown in the form UI. If this isn't possible, then no error message is thrown.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         *
+         * @param formData A string that contains text and HTML and that represents the body of the reply form. The string is limited to 32 KB.
+         * OR
+         * An {@link Office.ReplyFormData} object that contains body or attachment data and a callback function.
+         */
+        displayReplyForm(formData: string | ReplyFormData): void;
+        /**
+         * Gets initialization data passed when the add-in is {@link https://docs.microsoft.com/outlook/actionable-messages/invoke-add-in-from-actionable-message | activated by an actionable message}.
+         * 
+         * Note: This method is only supported by Outlook 2016 for Windows (Click-to-Run versions greater than 16.0.8413.1000) and Outlook on the web for Office 365.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         * 
+         * In addition to this signature, the method also has the following signature:
+         * 
+         * `getInitializationContextAsync(callback?: (result: AsyncResult) => void): void;`
+         * 
+         * @param options Optional. An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object. On success, the initialization data is provided in the asyncResult.value property as a string. If there is no initialization context, the asyncResult object will contain an Error object with its code property set to 9020 and its name property set to GenericResponseError.
+         *
+         * @beta
+         */
+        getInitializationContextAsync(options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+        /**
+         * Gets initialization data passed when the add-in is {@link https://docs.microsoft.com/outlook/actionable-messages/invoke-add-in-from-actionable-message | activated by an actionable message}.
+         * 
+         * Note: This method is only supported by Outlook 2016 for Windows (Click-to-Run versions greater than 16.0.8413.1000) and Outlook on the web for Office 365.
+         * 
+         * [Api set: Mailbox Preview]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         * 
+         * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object. On success, the initialization data is provided in the asyncResult.value property as a string. If there is no initialization context, the asyncResult object will contain an Error object with its code property set to 9020 and its name property set to GenericResponseError.
+         *
+         * @beta
+         */
+        getInitializationContextAsync(callback?: (result: AsyncResult) => void): void;
+        /**
+         * Gets the entities found in the selected item.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         */
+        getEntities(): Entities;
+        /**
+         * Gets an array of all the entities of the specified entity type found in the selected item.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @param entityType One of the EntityType enumeration values.
+         * 
+         * @returns
+         * If the value passed in entityType is not a valid member of the EntityType enumeration, the method returns null. If no entities of the specified type are present on the item, the method returns an empty array. Otherwise, the type of the objects in the returned array depends on the type of entity requested in the entityType parameter.
+         *
+         * @remarks
+         * 
+         * While the minimum permission level to use this method is Restricted, some entity types require ReadItem to access, as specified in the following table.
+         * 
+         * <table>
+         *   <tr>
+         *     <th>Value of entityType</th>
+         *     <th>Type of objects in returned array</th>
+         *     <th>Required Permission Leve</th>
+         *   </tr>
+         *   <tr>
+         *     <td>Address</td>
+         *     <td>String</td>
+         *     <td>Restricted</td>
+         *   </tr>
+         *   <tr>
+         *     <td>Contact</td>
+         *     <td>Contact</td>
+         *     <td>ReadItem</td>
+         *   </tr>
+         *   <tr>
+         *     <td>EmailAddress</td>
+         *     <td>String</td>
+         *     <td>ReadItem</td>
+         *   </tr>
+         *   <tr>
+         *     <td>MeetingSuggestion</td>
+         *     <td>MeetingSuggestion</td>
+         *     <td>ReadItem</td>
+         *   </tr>
+         *   <tr>
+         *     <td>PhoneNumber</td>
+         *     <td>PhoneNumber</td>
+         *     <td>Restricted</td>
+         *   </tr>
+         *   <tr>
+         *     <td>TaskSuggestion</td>
+         *     <td>TaskSuggestion</td>
+         *     <td>ReadItem</td>
+         *   </tr>
+         *   <tr>
+         *     <td>URL</td>
+         *     <td>String</td>
+         *     <td>Restricted</td>
+         *   </tr>
+         * </table>
+         * 
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
+         *
+         * Applicable Outlook mode: Read
+         */
+        getEntitiesByType(entityType: Office.MailboxEnums.EntityType): (string | Contact | MeetingSuggestion | PhoneNumber | TaskSuggestion)[];
+        /**
+         * Returns well-known entities in the selected item that pass the named filter defined in the manifest XML file.
+         *
+         * The getFilteredEntitiesByName method returns the entities that match the regular expression defined in the ItemHasKnownEntity rule element in the manifest XML file with the specified FilterName element value.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         *
+         * @param name The name of the ItemHasKnownEntity rule element that defines the filter to match.
+         * @returns If there is no ItemHasKnownEntity element in the manifest with a FilterName element value that matches the name parameter, the method returns null. If the name parameter does match an ItemHasKnownEntity element in the manifest, but there are no entities in the current item that match, the method return an empty array.
+         */
+        getFilteredEntitiesByName(name: string): (string | Contact | MeetingSuggestion | PhoneNumber | TaskSuggestion)[];
+        /**
+         * Returns string values in the selected item that match the regular expressions defined in the manifest XML file.
+         *
+         * The getRegExMatches method returns the strings that match the regular expression defined in each ItemHasRegularExpressionMatch or ItemHasKnownEntity rule element in the manifest XML file. For an ItemHasRegularExpressionMatch rule, a matching string has to occur in the property of the item that is specified by that rule. The PropertyName simple type defines the supported properties.
+         *
+         * If you specify an ItemHasRegularExpressionMatch rule on the body property of an item, the regular expression should further filter the body and should not attempt to return the entire body of the item. Using a regular expression such as .* to obtain the entire body of an item does not always return the expected results. Instead, use the Body.getAsync method to retrieve the entire body.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @returns
+         * An object that contains arrays of strings that match the regular expressions defined in the manifest XML file. The name of each array is equal to the corresponding value of the RegExName attribute of the matching ItemHasRegularExpressionMatch rule or the FilterName attribute of the matching ItemHasKnownEntity rule.
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         */
+        getRegExMatches(): any;
+        /**
+         * Returns string values in the selected item that match the named regular expression defined in the manifest XML file.
+         *
+         * The getRegExMatchesByName method returns the strings that match the regular expression defined in the ItemHasRegularExpressionMatch rule element in the manifest XML file with the specified RegExName element value.
+         *
+         * If you specify an ItemHasRegularExpressionMatch rule on the body property of an item, the regular expression should further filter the body and should not attempt to return the entire body of the item. Using a regular expression such as .* to obtain the entire body of an item does not always return the expected results.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @returns
+         * An array that contains the strings that match the regular expression defined in the manifest XML file.
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         *
+         * @param name The name of the ItemHasRegularExpressionMatch rule element that defines the filter to match.
+         */
+        getRegExMatchesByName(name: string): string[];
+        /**
+         * Gets the entities found in a highlighted match a user has selected. Highlighted matches apply to contextual add-ins.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         *
+         * @param name The name of the ItemHasRegularExpressionMatch rule element that defines the filter to match.
+         */
+        getSelectedEntities(): Entities;
+        /**
+         * Returns string values in a highlighted match that match the regular expressions defined in the manifest XML file. Highlighted matches apply to contextual add-ins.
+         *
+         * The getSelectedRegExMatches method returns the strings that match the regular expression defined in each ItemHasRegularExpressionMatch or ItemHasKnownEntity rule element in the manifest XML file. For an ItemHasRegularExpressionMatch rule, a matching string has to occur in the property of the item that is specified by that rule. The PropertyName simple type defines the supported properties.
+         *
+         * If you specify an ItemHasRegularExpressionMatch rule on the body property of an item, the regular expression should further filter the body and should not attempt to return the entire body of the item. Using a regular expression such as .* to obtain the entire body of an item does not always return the expected results. Instead, use the Body.getAsync method to retrieve the entire body.
+         *
+         * Note: This method is not supported in Outlook for iOS or Outlook for Android.
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * @returns
+         * An object that contains arrays of strings that match the regular expressions defined in the manifest XML file. The name of each array is equal to the corresponding value of the RegExName attribute of the matching ItemHasRegularExpressionMatch rule or the FilterName attribute of the matching ItemHasKnownEntity rule.
+         *
+         * @remarks
+         *
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Message Read
+         */
+        getSelectedRegExMatches(): any;
     }
 
     /**
@@ -8071,7 +11749,7 @@ declare namespace Office {
      *
      * @remarks
      *
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Read
      */
@@ -8115,7 +11793,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.1]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Compose
      */
@@ -8132,9 +11810,14 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
+         * 
+         * In addition to this signature, the method also has the following signature:
+         * 
+         * `getAsync(callback: (result: AsyncResult) => void): void;`
+         * 
          */
         getAsync(options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
         /**
@@ -8147,7 +11830,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
          */
@@ -8165,11 +11848,19 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
          *
          * Errors: DataExceedsMaximumSize - The location parameter is longer than 255 characters.
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `setAsync(location: string): void;`
+         * 
+         * `setAsync(location: string, options: AsyncContextOptions): void;`
+         * 
+         * `setAsync(location: string, callback: (result: AsyncResult) => void): void;`
          */
         setAsync(location: string, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
         /**
@@ -8182,7 +11873,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -8201,7 +11892,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -8219,14 +11910,13 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
          *
          * Errors: DataExceedsMaximumSize - The location parameter is longer than 255 characters.
          */
         setAsync(location: string, callback: (result: AsyncResult) => void): void;
-
     }
     /**
      * Provides access to the Outlook Add-in object model for Microsoft Outlook and Microsoft Outlook on the web.
@@ -8242,11 +11932,32 @@ declare namespace Office {
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: Restricted
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
      *
      * Applicable Outlook mode: Compose or read
      */
     interface Mailbox {
+        /**
+         * Provides diagnostic information to an Outlook add-in.
+         * 
+         * Contains the following members:
+         * 
+         *  - hostName (string): A string that represents the name of the host application. It be one of the following values: Outlook, Mac Outlook, OutlookIOS, or OutlookWebApp.
+         * 
+         *  - hostVersion (string): A string that represents the version of either the host application or the Exchange Server. If the mail add-in is running on the Outlook desktop client or Outlook for iOS, the hostVersion property returns the version of the host application, Outlook. In Outlook Web App, the property returns the version of the Exchange Server. An example is the string 15.0.468.0.
+         * 
+         *  - OWAView (string): A string that represents the current view of Outlook Web App. If the host application is not Outlook Web App, then accessing this property results in undefined. Outlook Web App has three views (OneColumn - displayed when the screen is narrow, TwoColumns - displayed when the screen is wider, and ThreeColumns - displayed when the screen is wide.) that correspond to the width of the screen and the window, and the number of columns that can be displayed.
+         *
+         *  More information is under {@link Office.Diagnostics}. 
+         *
+         * [Api set: Mailbox 1.0]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Compose or read
+         */
+        diagnostics: Diagnostics;
         /**
          * Gets the URL of the Exchange Web Services (EWS) endpoint for this email account. Read mode only.
          *
@@ -8260,9 +11971,9 @@ declare namespace Office {
          *
          * @remarks
          *
-         * The ewsUrl value can be used by a remote service to make EWS calls to the user's mailbox. For example, you can create a remote service to [get attachments from the selected item](https://msdn.microsoft.com/library/office/dn148008.aspx).
+         * The ewsUrl value can be used by a remote service to make EWS calls to the user's mailbox. For example, you can create a remote service to {@link https://msdn.microsoft.com/library/office/dn148008.aspx | get attachments from the selected item}.
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -8284,13 +11995,19 @@ declare namespace Office {
          *
          * @remarks
          *
-         * The restUrl value can be used to make [REST API](https://docs.microsoft.com/outlook/rest/) calls to the user's mailbox.
+         * The restUrl value can be used to make {@link https://docs.microsoft.com/outlook/rest/ | REST API} calls to the user's mailbox.
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
         restUrl: string;
+        /**
+         * Information about the user associated with the mailbox. This includes their account type, display name, email adddress, and time zone.
+         * 
+         * More information is under {@link Office.UserProfile}
+         */
+        userProfile: UserProfile;
         /**
          * Adds an event handler for a supported event.
          *
@@ -8300,7 +12017,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8309,7 +12026,7 @@ declare namespace Office {
          * @param options Optional. Provides an option for preserving context data of any type, unchanged, for use in a callback.
          * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
          */
-        addHandlerAsync(eventType: Office.EventType, handler: (type: Office.EventType) => void, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
+        addHandlerAsync(eventType: EventType, handler: (type: EventType) => void, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
         /**
          * Converts an item ID formatted for REST into EWS format.
          *
@@ -8321,7 +12038,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: Restricted
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8340,7 +12057,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8356,9 +12073,9 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Item IDs retrieved via EWS or via the itemId property use a different format than the format used by REST APIs (such as the [Outlook Mail API](https://msdn.microsoft.com/office/office365/APi/mail-rest-operations) or the [Microsoft Graph](http://graph.microsoft.io/)). The convertToRestId method converts an EWS-formatted ID into the proper format for REST.
+         * Item IDs retrieved via EWS or via the itemId property use a different format than the format used by REST APIs (such as the {@link https://msdn.microsoft.com/office/office365/APi/mail-rest-operations | Outlook Mail API} or the {@link http://graph.microsoft.io/ | Microsoft Graph}. The convertToRestId method converts an EWS-formatted ID into the proper format for REST.
          *
-         * Minimum permission level: Restricted
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8375,7 +12092,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8400,7 +12117,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8424,7 +12141,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8448,7 +12165,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          *
@@ -8466,14 +12183,14 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Read
          *
          * @param parameters A dictionary containing all values to be filled in for the user in the new form. All parameters are optional.
-         *        toRecipients: An array of strings containing the email addresses or an array containing an EmailAddressDetails object for each of the recipients on the To line. The array is limited to a maximum of 100 entries.
-         *        ccRecipients: An array of strings containing the email addresses or an array containing an EmailAddressDetails object for each of the recipients on the Cc line. The array is limited to a maximum of 100 entries.
-         *        bccRecipients: An array of strings containing the email addresses or an array containing an EmailAddressDetails object for each of the recipients on the Bcc line. The array is limited to a maximum of 100 entries.
+         *        toRecipients: An array of strings containing the email addresses or an array containing an {@link Office.EmailAddressDetails} object for each of the recipients on the To line. The array is limited to a maximum of 100 entries.
+         *        ccRecipients: An array of strings containing the email addresses or an array containing an {@link Office.EmailAddressDetails} object for each of the recipients on the Cc line. The array is limited to a maximum of 100 entries.
+         *        bccRecipients: An array of strings containing the email addresses or an array containing an {@link Office.EmailAddressDetails} object for each of the recipients on the Bcc line. The array is limited to a maximum of 100 entries.
          *        subject: A string containing the subject of the message. The string is limited to a maximum of 255 characters.
          *        htmlBody: The HTML body of the message. The body content is limited to a maximum size of 32 KB.
          *        attachments: An array of JSON objects that are either file or item attachments.
@@ -8507,9 +12224,15 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose and read
+         * 
+         * In addition to this signature, the method has the following signatures:
+         * 
+         * `getCallbackTokenAsync(callback: (result: AsyncResult) => void): void;`
+         * 
+         * `getCallbackTokenAsync(callback: (result: AsyncResult) => void, userContext?: any): void;`
          *
          * @param options An object literal that contains one or more of the following properties.
          *        isRest: Determines if the token provided will be used for the Outlook REST APIs or Exchange Web Services. Default value is false.
@@ -8532,7 +12255,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose and read
          *
@@ -8554,7 +12277,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose and read
          *
@@ -8571,9 +12294,9 @@ declare namespace Office {
          *
          * @remarks
          *
-         * The getUserIdentityTokenAsync method returns a token that you can use to identify and [authenticate the add-in and user with a third-party system](https://msdn.microsoft.com/library/office/fp179828.aspx).
+         * The getUserIdentityTokenAsync method returns a token that you can use to identify and {@link https://msdn.microsoft.com/library/office/fp179828.aspx | authenticate the add-in and user with a third-party system}.
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose and read
          *
@@ -8604,7 +12327,7 @@ declare namespace Office {
          *
          * When you use the makeEwsRequestAsync method in mail apps running in Outlook versions earlier than version 15.0.4535.1004, you should set the encoding value to ISO-8859-1.
          *
-         * <?xml version="1.0" encoding="iso-8859-1"?>
+         * `<?xml version="1.0" encoding="iso-8859-1"?>`
          *
          * You do not need to set the encoding value when your mail app is running in Outlook on the web. You can determine whether your mail app is running in Outlook or Outlook on the web by using the mailbox.diagnostics.hostName property. You can determine what version of Outlook is running by using the mailbox.diagnostics.hostVersion property.
          *
@@ -8612,7 +12335,7 @@ declare namespace Office {
          *
          * @remarks
          *
-         * Minimum permission level: ReadWriteMailbox
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteMailbox
          *
          * Applicable Outlook mode: Compose and read
          *
@@ -8633,7 +12356,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Read
      */
@@ -8669,7 +12392,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.3]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Compose or read
      */
@@ -8679,7 +12402,7 @@ declare namespace Office {
          */
         key?: string;
         /**
-         * Specifies the Office.MailboxEnums.ItemNotificationMessageType of message. If type is ProgressIndicator or ErrorMessage, an icon is automatically supplied and the message is not persistent. Therefore the icon and persistent properties are not valid for these types of messages. Including them will result in an ArgumentException. If type is ProgressIndicator, the developer should remove or replace the progress indicator when the action is complete.
+         * Specifies the ItemNotificationMessageType of message. If type is ProgressIndicator or ErrorMessage, an icon is automatically supplied and the message is not persistent. Therefore the icon and persistent properties are not valid for these types of messages. Including them will result in an ArgumentException. If type is ProgressIndicator, the developer should remove or replace the progress indicator when the action is complete.
          */
         type: Office.MailboxEnums.ItemNotificationMessageType;
         /**
@@ -8701,7 +12424,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.3]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Compose or read
      */
@@ -8720,9 +12443,18 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
+         * 
+         * In addition to this signature, the method also has the following signatures:
+         * 
+         * `addAsync(key: string, JSONmessage: NotificationMessageDetails): void;`
+         * 
+         * `addAsync(key: string, JSONmessage: NotificationMessageDetails, options: AsyncContextOptions): void;`
+         * 
+         * `addAsync(key: string, JSONmessage: NotificationMessageDetails, callback: (result: AsyncResult) => void): void;`
+         * 
          */
         addAsync(key: string, JSONmessage: NotificationMessageDetails, options?: AsyncContextOptions, callback?: (result: AsyncResult) => void): void;
         /**
@@ -8736,7 +12468,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -8754,7 +12486,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -8771,7 +12503,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -8782,9 +12514,13 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
+         * 
+         * In addition to the main signature, this method also has this signature:
+         * 
+         * `getAllAsync(callback: (result: AsyncResult) => void): void;`
          *
          * @param options Optional. An object literal that contains one or more of the following properties.
          *        asyncContext: Developers can provide any object they wish to access in the callback method.
@@ -8797,7 +12533,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8810,9 +12546,17 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
+         * 
+         * In addition to the main signature, this method also has these signatures:
+         * 
+         * `removeAsync(key: string): void;`
+         * 
+         * `removeAsync(key: string, options: AsyncContextOptions): void;`
+         * 
+         * `removeAsync(key: string, callback: (result: AsyncResult) => void): void;`
          *
          * @param key The key for the notification message to remove.
          * @param options Optional. An object literal that contains one or more of the following properties.
@@ -8826,7 +12570,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8839,7 +12583,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8854,7 +12598,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8870,9 +12614,17 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
+         * 
+         * In addition to the main signature, this method also has these signatures:
+         * 
+         * `replaceAsync(key: string, JSONmessage: NotificationMessageDetails): void;`
+         * 
+         * `replaceAsync(key: string, JSONmessage: NotificationMessageDetails, options: AsyncContextOptions): void;`
+         * 
+         * `replaceAsync(key: string, JSONmessage: NotificationMessageDetails, callback: (result: AsyncResult) => void): void;`
          *
          * @param key The key for the notification message to replace. It can't be longer than 32 characters.
          * @param JSONmessage A JSON object that contains the new notification message to replace the existing message. It contains a NotificationMessageDetails object.
@@ -8889,7 +12641,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8905,7 +12657,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8923,7 +12675,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.3]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -8941,7 +12693,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Read
      */
@@ -8963,7 +12715,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.1]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Compose
      */
@@ -8982,11 +12734,19 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
          * Errors: NumberOfRecipientsExceeded - The number of recipients exceeded 100 entries.
+         * 
+         * In addition to the main signature, this method also has these signatures:
+         * 
+         * `addAsync(recipients: (string | EmailUser | EmailAddressDetails)[]): void;`
+         * 
+         * `addAsync(recipients: (string | EmailUser | EmailAddressDetails)[], options: AsyncContextOptions): void;`
+         * 
+         * `addAsync(recipients: (string | EmailUser | EmailAddressDetails)[], callback: (result: AsyncResult) => void): void;`
          *
          * @param recipients The recipients to add to the recipients list.
          * @param options Optional. An object literal that contains one or more of the following properties.
@@ -9008,7 +12768,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -9024,14 +12784,14 @@ declare namespace Office {
          *
          * - Strings containing SMTP email addresses
          *
-         * - EmailUser objects
+         * - {@link Office.EmailUser} objects
          *
-         * - EmailAddressDetails objects
+         * - {@link Office.EmailAddressDetails} objects
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -9049,14 +12809,14 @@ declare namespace Office {
          *
          * - Strings containing SMTP email addresses
          *
-         * - EmailUser objects
+         * - {@link Office.EmailUser} objects
          *
-         * - EmailAddressDetails objects
+         * - {@link Office.EmailAddressDetails} objects
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -9066,39 +12826,42 @@ declare namespace Office {
          * @param callback Optional. When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult. If adding the recipients fails, the asyncResult.error property will contain an error code.
          */
         addAsync(recipients: (string | EmailUser | EmailAddressDetails)[], callback: (result: AsyncResult) => void): void;
-
         /**
          * Gets a recipient list for an appointment or message.
          *
-         * When the call completes, the asyncResult.value property will contain an array of EmailAddressDetails objects.
+         * When the call completes, the asyncResult.value property will contain an array of{@link Office.EmailAddressDetails} objects.
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
-         *
-         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
-         */
-        getAsync(callback: (result: AsyncResult) => void): void;
-        /**
-         * Gets a recipient list for an appointment or message.
-         *
-         * When the call completes, the asyncResult.value property will contain an array of EmailAddressDetails objects.
-         *
-         * [Api set: Mailbox 1.1]
-         *
-         * @remarks
-         * Minimum permission level: ReadItem
-         *
-         * Applicable Outlook mode: Compose
+         * 
+         * In addition to the main signature, this method also has this signature:
+         * 
+         * `getAsync(callback: (result: AsyncResult) => void): void;`
          *
          * @param options An object literal that contains one or more of the following properties.
          *        asyncContext: Developers can provide any object they wish to access in the callback method.
          * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
          */
         getAsync(options: AsyncContextOptions, callback: (result: AsyncResult) => void): void;
+        /**
+         * Gets a recipient list for an appointment or message.
+         *
+         * When the call completes, the asyncResult.value property will contain an array of {@link Office.EmailAddressDetails} objects.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Compose
+         *
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
+         */
+        getAsync(callback: (result: AsyncResult) => void): void;
         /**
          * Sets a recipient list for an appointment or message.
          *
@@ -9108,18 +12871,26 @@ declare namespace Office {
          *
          * - Strings containing SMTP email addresses
          *
-         * - EmailUser objects
+         * - {@link Office.EmailUser} objects
          *
-         * - EmailAddressDetails objects
+         * - {@link Office.EmailAddressDetails} objects
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
          * Errors: NumberOfRecipientsExceeded - The number of recipients exceeded 100 entries.
+         * 
+         * In addition to the main signature, this method also has these signatures:
+         * 
+         * `setAsync(recipients: (string | EmailUser | EmailAddressDetails)[]): void;`
+         * 
+         * `setAsync(recipients: (string | EmailUser | EmailAddressDetails)[], options: AsyncContextOptions): void;`
+         * 
+         * `setAsync(recipients: (string | EmailUser | EmailAddressDetails)[], callback: (result: AsyncResult) => void): void;`
          *
          * @param recipients The recipients to add to the recipients list.
          * @param options Optional. An object literal that contains one or more of the following properties.
@@ -9136,14 +12907,14 @@ declare namespace Office {
          *
          * - Strings containing SMTP email addresses
          *
-         * - EmailUser objects
+         * - {@link Office.EmailUser} objects
          *
-         * - EmailAddressDetails objects
+         * - {@link Office.EmailAddressDetails} objects
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -9161,14 +12932,14 @@ declare namespace Office {
          *
          * - Strings containing SMTP email addresses
          *
-         * - EmailUser objects
+         * - {@link Office.EmailUser} objects
          *
-         * - EmailAddressDetails objects
+         * - {@link Office.EmailAddressDetails} objects
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -9188,14 +12959,14 @@ declare namespace Office {
          *
          * - Strings containing SMTP email addresses
          *
-         * - EmailUser objects
+         * - {@link Office.EmailUser} objects
          *
-         * - EmailAddressDetails objects
+         * - {@link Office.EmailAddressDetails} objects
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -9211,23 +12982,53 @@ declare namespace Office {
     /**
      * The recurrence object provides methods to get and set the recurrence pattern of appointments but only get the recurrence pattern of meeting requests. It will have a dictionary with the following keys: seriesTime, recurrenceType, recurrenceProperties, and recurrenceTimeZone (optional).
      * 
-     * 
      * [Api set: Mailbox Preview]
      * 
      * @remarks
      * 
-     * |State|Editable?|Viewable?|
-     * |-----|---------|---------|
-     * |Appointment Organizer - Compose Series|Yes (setAsync)|Yes (getAsync)|
-     * |Appointment Organizer - Compose Instance|No (setAsync returns error)|Yes (getAsync)|
-     * |Appointment Attendee - Read Series|No (setAsync not available)|Yes (item.recurrence)|
-     * |Appointment Attendee - Read Instance|No (setAsync not available)|Yes (item.recurrence)|
-     * |Meeting Request - Read Series|No (setAsync not available)|Yes (item.recurrence)|
-     * |Meeting Request - Read Instance|No (setAsync not available)|Yes (item.recurrence)|
+     * <table>
+     *   <tr>
+     *     <th>State</th>
+     *     <th>Editable?</th>
+     *     <th>Viewable?</th>
+     *   </tr>
+     *   <tr>
+     *     <td>Appointment Organizer - Compose Series</td>
+     *     <td>Yes (setAsync)</td>
+     *     <td>Yes (getAsync)</td>
+     *   </tr>
+     *   <tr>
+     *     <td>Appointment Organizer - Compose Instance</td>
+     *     <td>No (setAsync returns error)</td>
+     *     <td>Yes (getAsync)</td>
+     *   </tr>
+     *   <tr>
+     *     <td>Appointment Attendee - Read Series</td>
+     *     <td>No (setAsync not available)</td>
+     *     <td>Yes (item.recurrence)</td>
+     *   </tr>
+     *   <tr>
+     *     <td>Appointment Attendee - Read Instance</td>
+     *     <td>No (setAsync not available)</td>
+     *     <td>Yes (item.recurrence)</td>
+     *   </tr>
+     *   <tr>
+     *     <td>Meeting Request - Read Series</td>
+     *     <td>No (setAsync not available)</td>
+     *     <td>Yes (item.recurrence)</td>
+     *   </tr>
+     *   <tr>
+     *     <td>Meeting Request - Read Instance</td>
+     *     <td>No (setAsync not available)</td>
+     *     <td>Yes (item.recurrence)</td>
+     *   </tr>
+     * </table>
      * 
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      * 
      * Applicable Outlook mode: Compose or read
+     * 
+     * @beta
      */
     export interface Recurrence {
         /**
@@ -9237,7 +13038,7 @@ declare namespace Office {
          * 
          * @remarks
          * 
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          * 
          * Applicable Outlook mode: Compose or read
          */
@@ -9249,7 +13050,7 @@ declare namespace Office {
          * 
          * @remarks
          * 
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          * 
          * Applicable Outlook mode: Compose or read
          */
@@ -9262,20 +13063,20 @@ declare namespace Office {
          * 
          * @remarks
          * 
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          * 
          * Applicable Outlook mode: Compose or read
          */
         recurrenceType: MailboxEnums.RecurrenceType;
 
         /**
-         * This object enables you to manage the start and end dates of the recurring appointment series and the usual start and end times of instances. **This object is not in UTC time.** Instead, it is set in the time zone specified by the recurrenceTimeZone value or defaulted to the item's time zone.
+         * The {@link Office.SeriesTime} object enables you to manage the start and end dates of the recurring appointment series and the usual start and end times of instances. **This object is not in UTC time.** Instead, it is set in the time zone specified by the recurrenceTimeZone value or defaulted to the item's time zone.
          * 
          * [Api set: Mailbox Preview]
          * 
          * @remarks
          * 
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          * 
          * Applicable Outlook mode: Compose or read
          */
@@ -9290,9 +13091,13 @@ declare namespace Office {
          * 
          * @remarks
          * 
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          * 
          * Applicable Outlook mode: Compose or read
+         * 
+         * In addition to the main signature, this method also has this signature:
+         * 
+         * `getAsync(callback?: (result: AsyncResult) => void): void;`
          * 
          * @param options Optional. An object literal that contains one or more of the following properties.
          *        asyncContext: Developers can provide any object they wish to access in the callback method.
@@ -9309,7 +13114,7 @@ declare namespace Office {
          * 
          * @remarks
          * 
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          * 
          * Applicable Outlook mode: Compose or read
          * 
@@ -9326,11 +13131,15 @@ declare namespace Office {
          * 
          * @remarks
          * 
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          * 
          * Applicable Outlook mode: Compose
          * 
          * Errors: InvalidEndTime - The appointment end time is before its start time.
+         * 
+         * In addition to the main signature, this method also has this signature:
+         * 
+         * `setAsync(recurrencePattern: Recurrence, callback?: (result: AsyncResult) => void): void;`
          * 
          * @param recurrencePattern A recurrence object.
          * @param options Optional. An object literal that contains one or more of the following properties.
@@ -9348,7 +13157,7 @@ declare namespace Office {
          * 
          * @remarks
          * 
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          * 
          * Applicable Outlook mode: Compose
          * 
@@ -9367,9 +13176,11 @@ declare namespace Office {
      * 
      * @remarks
      * 
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      * 
      * Applicable Outlook mode: Compose or read
+     * 
+     * @beta
      */
     export interface RecurrenceProperties {
         /**
@@ -9402,15 +13213,47 @@ declare namespace Office {
         firstDayOfWeek: MailboxEnums.Days;
     }
 
+    /**
+     * A file or item attachment. Used when displaying a reply form.
+     */
     export interface ReplyFormAttachment {
+        /**
+         * Indicates the type of attachment. Must be file for a file attachment or item for an item attachment.
+         */
         type: string;
+        /**
+         * A string that contains the name of the attachment, up to 255 characters in length.
+         */
         name: string;
+        /**
+         * Only used if type is set to file. The URI of the location for the file.
+         */
         url?: string;
+        /**
+         * Only used if type is set to file. If true, indicates that the attachment will be shown inline in the message body, and should not be displayed in the attachment list.
+         */
+        inLine?: boolean;
+        /**
+         * Only used if type is set to item. The EWS item id of the attachment. This is a string up to 100 characters.
+         */
         itemId?: string;
     }
+
+    /**
+     * A ReplyFormData object that contains body or attachment data and a callback function. Used when displaying a reply form.
+     */
     interface ReplyFormData {
+        /**
+         * A string that contains text and HTML and that represents the body of the reply form. The string is limited to 32 KB.
+         */
         htmlBody?: string;
+        /**
+         * An array of {@link Office.ReplyFormAttachment} that are either file or item attachments.
+         */
         attachments?: ReplyFormAttachment[];
+        /**
+         * When the reply display call completes, the function passed in the callback parameter is called with a single parameter, asyncResult, which is an AsyncResult object.
+         */
         callback?: (result: AsyncResult) => void;
     }
     /**
@@ -9427,7 +13270,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: Restricted
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
      *
      * Applicable Outlook mode: Compose or read
      */
@@ -9438,7 +13281,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: Restricted
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -9452,7 +13295,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: Restricted
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -9467,7 +13310,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: Restricted
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -9486,7 +13329,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: Restricted
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: Restricted
          *
          * Applicable Outlook mode: Compose or read
          *
@@ -9502,9 +13345,11 @@ declare namespace Office {
      * [Api set: Mailbox Preview]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Compose or read
+     * 
+     * @beta
      */
     interface SeriesTime {
         /**
@@ -9513,55 +13358,55 @@ declare namespace Office {
          * [Api set: Mailbox Preview]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
         getDuration(): number;
 
         /**
-         * Gets the end date of a recurrence pattern in the following [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) date format: "YYYY-MM-DD"
+         * Gets the end date of a recurrence pattern in the following {@link https://www.iso.org/iso-8601-date-and-time-format.html | ISO 8601} date format: "YYYY-MM-DD"
          * 
          * [Api set: Mailbox Preview]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
         getEndDate(): string;
 
         /**
-         * Gets the end time of a usual appointment or meeting request instance of a recurrence pattern in whichever time zone that the user or add-in set the recurrence pattern using the following [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format: "THH:mm:ss:mmm"
+         * Gets the end time of a usual appointment or meeting request instance of a recurrence pattern in whichever time zone that the user or add-in set the recurrence pattern using the following {@link https://www.iso.org/iso-8601-date-and-time-format.html | ISO 8601} format: "THH:mm:ss:mmm"
          * 
          * [Api set: Mailbox Preview]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
         getEndTime(): string;
 
         /**
-         * Gets the start date of a recurrence pattern in the following [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) date format: "YYYY-MM-DD"
+         * Gets the start date of a recurrence pattern in the following {@link https://www.iso.org/iso-8601-date-and-time-format.html | ISO 8601} date format: "YYYY-MM-DD"
          * 
          * [Api set: Mailbox Preview]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
         getStartDate(): string;
 
         /**
-         * Gets the start time of a usual appointment instance of a recurrence pattern in whichever time zone that the user/add-in set the recurrence pattern using the following [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format: "THH:mm:ss:mmm"
+         * Gets the start time of a usual appointment instance of a recurrence pattern in whichever time zone that the user/add-in set the recurrence pattern using the following {@link https://www.iso.org/iso-8601-date-and-time-format.html | ISO 8601} format: "THH:mm:ss:mmm"
          * 
          * [Api set: Mailbox Preview]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -9573,7 +13418,7 @@ declare namespace Office {
          * [Api set: Mailbox Preview]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          * 
@@ -9587,46 +13432,52 @@ declare namespace Office {
          * [Api set: Mailbox Preview]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          * 
          * Errors: Invalid date format - The date is not in an acceptable format.
+         * 
+         * In addition to the main signature, this method also has this signature:
+         * 
+         * `setEndDate(date: string): void;` (Where date is the end date of the recurring appointment series represented in the {@link https://www.iso.org/iso-8601-date-and-time-format.html | ISO 8601} date format: "YYYY-MM-DD").
          * 
          * @param year The year value of the end date.
          * @param month The month value of the end date. Valid range is 0-11 where 0 represents the 1st month and 11 represents the 12th month.
          * @param day The day value of the end date.
          */
         setEndDate(year: number, month: number, day: number): void;
-
         /**
          * Sets the end date of a recurring appointment series.
          * 
          * [Api set: Mailbox Preview]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          * 
          * Errors: Invalid date format - The date is not in an acceptable format.
          * 
-         * @param date End date of the recurring appointment series represented in the [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) date format: "YYYY-MM-DD".
+         * @param date End date of the recurring appointment series represented in the {@link https://www.iso.org/iso-8601-date-and-time-format.html | ISO 8601} date format: "YYYY-MM-DD".
          */
         setEndDate(date: string): void;
-
         /**
          * Sets the start date of a recurring appointment series.
          * 
          * [Api set: Mailbox Preview]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          * 
          * Errors: Invalid date format - The date is not in an acceptable format.
          * 
+         * In addition to the main signature, this method also has this signature:
+         * 
+         * `setStartDate(date: string): void;` (Where date is the start date of the recurring appointment series represented in the {@link https://www.iso.org/iso-8601-date-and-time-format.html | ISO 8601} date format: "YYYY-MM-DD").
+         *  
          * @param year The year value of the start date.
          * @param month The month value of the start date. Valid range is 0-11 where 0 represents the 1st month and 11 represents the 12th month.
          * @param day The day value of the start date.
@@ -9639,13 +13490,13 @@ declare namespace Office {
          * [Api set: Mailbox Preview]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          * 
          * Errors: Invalid date format - The date is not in an acceptable format.
          * 
-         * @param date Start date of the recurring appointment series represented in the [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) date format: "YYYY-MM-DD".
+         * @param date Start date of the recurring appointment series represented in the {@link https://www.iso.org/iso-8601-date-and-time-format.html | ISO 8601} date format: "YYYY-MM-DD".
          */
         setStartDate(date:string): void;
 
@@ -9655,11 +13506,15 @@ declare namespace Office {
          * [Api set: Mailbox Preview]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          * 
          * Errors: Invalid time format - The time is not in an acceptable format.
+         * 
+         * In addition to the main signature, this method also has this signature:
+         * 
+         * `setStartTime(time: string): void;` (Where time is the start time of all instances represented by standard datetime string format: "THH:mm:ss:mmm").
          * 
          * @param hours The hour value of the start time. Valid range: 0-24.
          * @param minutes The minute value of the start time. Valid range: 0-59.
@@ -9672,7 +13527,7 @@ declare namespace Office {
          * [Api set: Mailbox Preview]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          * 
@@ -9689,42 +13544,46 @@ declare namespace Office {
      * [Api set: Mailbox 1.1]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Compose
      */
     interface Subject {
         /**
          * Gets the subject of an appointment or message.
-         * The getAsync method starts an asynchronous call to the Exchange server to get the subject of an appointment or message.
-         *
-         * [Api set: Mailbox 1.1]
-         *
-         * @remarks
-         * Minimum permission level: ReadItem
-         *
-         * Applicable Outlook mode: Compose
-         *
-         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
-         */
-        getAsync(callback: (result: AsyncResult) => void): void;
-        /**
-         * Gets the subject of an appointment or message.
          *
          * The getAsync method starts an asynchronous call to the Exchange server to get the subject of an appointment or message.
          *
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
+         * 
+         * In addition to the main signature, this method also has this signature:
+         * 
+         * `getAsync(callback: (result: AsyncResult) => void): void;`
          *
          * @param options An object literal that contains one or more of the following properties.
          *        asyncContext: Developers can provide any object they wish to access in the callback method.
          * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
          */
         getAsync(options: AsyncContextOptions, callback: (result: AsyncResult) => void): void;
+        /**
+         * Gets the subject of an appointment or message.
+         * The getAsync method starts an asynchronous call to the Exchange server to get the subject of an appointment or message.
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * @remarks
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
+         *
+         * Applicable Outlook mode: Compose
+         *
+         * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
+         */
+        getAsync(callback: (result: AsyncResult) => void): void;
         /**
          * Sets the subject of an appointment or message.
          *
@@ -9733,11 +13592,19 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
          *
          * Errors: DataExceedsMaximumSize - The subject parameter is longer than 255 characters.
+         * 
+         * In addition to the main signature, this method also has these signatures:
+         * 
+         * `setAsync(subject: string): void;`
+         * 
+         * `setAsync(subject: string, options: AsyncContextOptions): void;`
+         * 
+         * `setAsync(subject: string, callback: (result: AsyncResult) => void): void;`
          *
          * @param subject The subject of the appointment or message. The string is limited to 255 characters.
          * @param options An object literal that contains one or more of the following properties.
@@ -9753,7 +13620,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -9770,7 +13637,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -9789,7 +13656,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -9809,7 +13676,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Read
      */
@@ -9829,7 +13696,7 @@ declare namespace Office {
      * [Api set: Mailbox 1.1]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Compose
      */
@@ -9842,13 +13709,19 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
+         * 
+         * In addition to the main signature, this method also has this signature:
+         * 
+         * `getAsync(callback: (result: AsyncResult) => void): void;`
          *
+         * @param options An object literal that contains one or more of the following properties.
+         *        asyncContext: Developers can provide any object they wish to access in the callback method.
          * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
          */
-        getAsync(callback: (result: AsyncResult) => void): void;
+        getAsync(options: AsyncContextOptions, callback: (result: AsyncResult) => void): void;
         /**
          * Gets the start or end time of an appointment.
          *
@@ -9857,15 +13730,13 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose
          *
-         * @param options An object literal that contains one or more of the following properties.
-         *        asyncContext: Developers can provide any object they wish to access in the callback method.
          * @param callback When the method completes, the function passed in the callback parameter is called with a single parameter of type AsyncResult.
          */
-        getAsync(options: AsyncContextOptions, callback: (result: AsyncResult) => void): void;
+        getAsync(callback: (result: AsyncResult) => void): void;
         /**
          * Sets the start or end time of an appointment.
          *
@@ -9876,11 +13747,19 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
          * Errors: InvalidEndTime - The appointment end time is before the appointment start time.
+         * 
+         * In addition to the main signature, this method also has these signatures:
+         * 
+         * `setAsync(dateTime: Date): void;`
+         * 
+         * `setAsync(dateTime: Date, options: AsyncContextOptions): void;`
+         * 
+         * `setAsync(dateTime: Date, callback: (result: AsyncResult) => void): void;`
          *
          * @param dateTime A date-time object in Coordinated Universal Time (UTC).
          * @param options An object literal that contains one or more of the following properties.
@@ -9898,7 +13777,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -9917,7 +13796,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -9938,7 +13817,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.1]
          *
          * @remarks
-         * Minimum permission level: ReadWriteItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadWriteItem
          *
          * Applicable Outlook mode: Compose
          *
@@ -9951,10 +13830,12 @@ declare namespace Office {
 
     }
     /**
+     * Information about the user associated with the mailbox. This includes their account type, display name, email adddress, and time zone.
+     * 
      * [Api set: Mailbox 1.0]
      *
      * @remarks
-     * Minimum permission level: ReadItem
+     * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
      *
      * Applicable Outlook mode: Compose or read
      */
@@ -9968,14 +13849,30 @@ declare namespace Office {
          *
          * @remarks
          *
-         * |Value    |Description   |
-         * |---------|--------------|
-         * |enterprise |The mailbox is on an on-premises Exchange server.|
-         * |gmail |The mailbox is associated with a Gmail account.|
-         * |office365 |The mailbox is associated with an Office 365 work or school account.|
-         * |outlookCom |The mailbox is associated with a personal Outlook.com account.|
+         * <table>
+         *   <tr>
+         *     <th>Value</th>
+         *     <th>Description?</th>
+         *   </tr>
+         *   <tr>
+         *     <td>enterprise</td>
+         *     <td>The mailbox is on an on-premises Exchange server.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>gmail</td>
+         *     <td>The mailbox is associated with a Gmail account.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>office365</td>
+         *     <td>The mailbox is associated with an Office 365 work or school account.</td>
+         *   </tr>
+         *   <tr>
+         *     <td>outlookCom</td>
+         *     <td>The mailbox is associated with a personal Outlook.com account.</td>
+         *   </tr>
+         * </table>
          *
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -9986,7 +13883,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -9997,7 +13894,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -10008,7 +13905,7 @@ declare namespace Office {
          * [Api set: Mailbox 1.0]
          *
          * @remarks
-         * Minimum permission level: ReadItem
+         * {@link https://docs.microsoft.com/outlook/add-ins/understanding-outlook-add-in-permissions | Minimum permission level}: ReadItem
          *
          * Applicable Outlook mode: Compose or read
          */
@@ -10032,27 +13929,76 @@ declare namespace Office {
 ////////////////////////////////////////////////////////////////
 
 declare namespace OfficeExtension {
-    /** An abstract proxy object that represents an object in an Office document. You create proxy objects from the context (or from other proxy objects), add commands to a queue to act on the object, and then synchronize the proxy object state with the document by calling "context.sync()". */
+    /** An abstract proxy object that represents an object in an Office document. You create proxy objects from the context (or from other proxy objects), add commands to a queue to act on the object, and then synchronize the proxy object state with the document by calling `context.sync()`. */
     class ClientObject {
         /** The request context associated with the object */
         context: ClientRequestContext;
-        /** Returns a boolean value for whether the corresponding object is a null object. You must call "context.sync()" before reading the isNullObject property. */
+        /** Returns a boolean value for whether the corresponding object is a null object. You must call `context.sync()` before reading the isNullObject property. */
         isNullObject: boolean;
     }
 }
 
 declare namespace OfficeExtension {
+    /**
+     * Specifies which properties of an object should be loaded. This load happens when the sync() method is executed. This synchronizes the states between Office objects and corresponding JavaScript proxy objects.
+     * 
+     * @remarks
+     * 
+     * For Word, the preferred method for specifying the properties and paging information is by using a string literal. The first two examples show the preferred way to request the text and font size properties for paragraphs in a paragraph collection:
+     * 
+     * `context.load(paragraphs, 'text, font/size');`
+     * 
+     * `paragraphs.load('text, font/size');`
+     * 
+     * Here is a similar example using object notation (includes paging):
+     * 
+     * `context.load(paragraphs, {select: 'text, font/size', expand: 'font', top: 50, skip: 0});`
+     * 
+     * `paragraphs.load({select: 'text, font/size', expand: 'font', top: 50, skip: 0});`
+     * 
+     * Note that if we don't specify the specific properties on the font object in the select statement, the expand statement by itself would indicate that all of the font properties are loaded.
+     */
     interface LoadOption {
+        /**
+         * A comma-delimited string, or array of strings, that specifies the properties/relationships to load.
+         */
         select?: string | string[];
+        /**
+         * A comma-delimited string, or array of strings, that specifies the relationships to load.
+         */
         expand?: string | string[];
+        /**
+         * Only usable on collection types. Specifies the maximum number of collection items that can be included in the result.
+         */
         top?: number;
+        /**
+         * Only usable on collection types. Specifies the number of items in the collection that are to be skipped and not included in the result. If top is specified, the result set will start after skipping the specified number of items.
+         */
         skip?: number;
     }
+    /**
+     * Provides an option for suppressing an error when the object that is used to set multiple properties tries to set read-only properties.
+     */
     interface UpdateOptions {
         /**
          * Throw an error if the passed-in property list includes read-only properties (default = true).
          */
         throwOnReadOnly?: boolean
+    }
+
+    /**
+     * Additional options passed into `{Host}.run(...)`.
+     */
+    export interface RunOptions<T> {
+        /**
+         * The URL of the remote workbook and the request headers to be sent.
+         */
+        session?: RequestUrlAndHeaderInfo | T;
+    
+        /**
+         *  A previously-created context, or API object, or array of objects. The batch will use the same RequestContext as the passed-in object, which means that any changes applied to the object will be picked up by "context.sync()".
+         */
+        previousObjects?: ClientObject | ClientObject[] | ClientRequestContext;
     }
 
     /** Contains debug information about the request context. */
@@ -10065,7 +14011,7 @@ declare namespace OfficeExtension {
         pendingStatements: string[];
     }
 
-    /** An abstract RequestContext object that facilitates requests to the host Office application. The "Excel.run" and "Word.run" methods provide a request context. */
+    /** An abstract RequestContext object that facilitates requests to the host Office application. The `Excel.run and `Word.run` methods provide a request context. */
     class ClientRequestContext {
         constructor(url?: string);
 
@@ -10075,23 +14021,28 @@ declare namespace OfficeExtension {
         /** Request headers */
         requestHeaders: { [name: string]: string };
 
-        /** Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties. */
+        /** Queues up a command to load the specified properties of the object. You must call `context.sync()` before reading the properties. 
+         * 
+         * @param object The object whose properties are loaded.
+         * @param option A  comma-delimited string, or array of strings, that specifies the properties/relationships to load, or an {@link OfficeExtension.LoadOption} object.
+         */
         load(object: ClientObject, option?: string | string[] | LoadOption): void;
 
         /**
         * Queues up a command to recursively load the specified properties of the object and its navigation properties.
-        * You must call "context.sync()" before reading the properties.
+        * 
+        * You must call `context.sync()` before reading the properties.
         *
         * @param object The object to be loaded.
-        * @param options The key-value pairing of load options for the types, such as { "Workbook": "worksheets,tables",  "Worksheet": "tables",  "Tables": "name" }
+        * @param options The key-value pairing of load options for the types, such as `{ "Workbook": "worksheets,tables",  "Worksheet": "tables",  "Tables": "name" }`
         * @param maxDepth The maximum recursive depth.
         */
         loadRecursive(object: ClientObject, options: { [typeName: string]: string | string[] | LoadOption }, maxDepth?: number): void;
 
-        /** Adds a trace message to the queue. If the promise returned by "context.sync()" is rejected due to an error, this adds a ".traceMessages" array to the OfficeExtension.Error object, containing all trace messages that were executed. These messages can help you monitor the program execution sequence and detect the cause of the error. */
+        /** Adds a trace message to the queue. If the promise returned by `context.sync()` is rejected due to an error, this adds a ".traceMessages" array to the OfficeExtension.Error object, containing all trace messages that were executed. These messages can help you monitor the program execution sequence and detect the cause of the error. */
         trace(message: string): void;
 
-        /** Synchronizes the state between JavaScript proxy objects and the Office document, by executing instructions queued on the request context and retrieving properties of loaded Office objects for use in your code.�This method returns a promise, which is resolved when the synchronization is complete. */
+        /** Synchronizes the state between JavaScript proxy objects and the Office document, by executing instructions queued on the request context and retrieving properties of loaded Office objects for use in your code. This method returns a promise, which is resolved when the synchronization is complete. */
         sync<T>(passThroughValue?: T): Promise<T>;
 
         /** Debug information */
@@ -10114,9 +14065,9 @@ declare namespace OfficeExtension {
 }
 
 declare namespace OfficeExtension {
-    /** Contains the result for methods that return primitive types. The object's value property is retrieved from the document after "context.sync()" is invoked. */
+    /** Contains the result for methods that return primitive types. The object's value property is retrieved from the document after `context.sync()` is invoked. */
     class ClientResult<T> {
-        /** The value of the result that is retrieved from the document after "context.sync()" is invoked. */
+        /** The value of the result that is retrieved from the document after `context.sync()` is invoked. */
         value: T;
     }
 }
@@ -10134,7 +14085,9 @@ declare namespace OfficeExtension {
          */
         extendedErrorLogging: boolean;
     };
-
+    /**
+     * Provides information about an error.
+     */
     interface DebugInfo {
         /** Error code string, such as "InvalidArgument". */
         code: string;
@@ -10142,24 +14095,20 @@ declare namespace OfficeExtension {
         message: string;
         /** Inner error, if applicable. */
         innerError?: DebugInfo | string;
-
         /** The object type and property or method name (or similar information), if available. */
         errorLocation?: string;
-
         /**
          * The statement that caused the error, if available.
          *
          * This statement will never contain any potentially-sensitive data and may not match the code exactly as written, but will be a close approximation.
          */
         statements?: string;
-
         /**
          * The statements that closely precede and follow the statement that caused the error, if available.
          *
          * These statements will never contain any potentially-sensitive data and may not match the code exactly as written, but will be a close approximation.
          */
         surroundingStatements?: string[];
-
         /**
          * All statements in the batch request (including any potentially-sensitive information that was specified in the request), if available.
          *
@@ -10168,7 +14117,7 @@ declare namespace OfficeExtension {
         fullStatements?: string[];
     }
 
-    /** The error object returned by "context.sync()", if a promise is rejected due to an error while processing the request. */
+    /** The error object returned by `context.sync()`, if a promise is rejected due to an error while processing the request. */
     class Error {
         /** Error name: "OfficeExtension.Error".*/
         name: string;
@@ -10178,9 +14127,9 @@ declare namespace OfficeExtension {
         stack: string;
         /** Error code string, such as "InvalidArgument". */
         code: string;
-        /** Trace messages (if any) that were added via a "context.trace()" invocation before calling "context.sync()". If there was an error, this contains all trace messages that were executed before the error occurred. These messages can help you monitor the program execution sequence and detect the case of the error. */
+        /** Trace messages (if any) that were added via a `context.trace()` invocation before calling `context.sync()`. If there was an error, this contains all trace messages that were executed before the error occurred. These messages can help you monitor the program execution sequence and detect the case of the error. */
         traceMessages: Array<string>;
-        /** Debug info (useful for detailed logging of the error, i.e., via JSON.stringify(...)). */
+        /** Debug info (useful for detailed logging of the error, i.e., via `JSON.stringify(...)`). */
         debugInfo: DebugInfo;
         /** Inner error, if applicable. */
         innerError: Error;
@@ -10205,7 +14154,7 @@ declare namespace OfficeExtension {
 }
 
 declare namespace OfficeExtension {
-    /** A Promise object that represents a deferred interaction with the host Office application. The publicly-consumable OfficeExtension.Promise is available starting in ExcelApi 1.2 and WordApi 1.2. Promises can be chained via ".then", and errors can be caught via ".catch". Remember to always use a ".catch" on the outer promise, and to return intermediary promises so as not to break the promise chain. When a browser-provided native Promise implementation is available, OfficeExtension.Promise will switch to use the native Promise instead. */
+    /** A Promise object that represents a deferred interaction with the host Office application. The publicly-consumable {@link Office.OfficeExtension.Promise} is available starting in ExcelApi 1.2 and WordApi 1.2. Promises can be chained via ".then", and errors can be caught via ".catch". Remember to always use a ".catch" on the outer promise, and to return intermediary promises so as not to break the promise chain. When a browser-provided native Promise implementation is available, OfficeExtension.Promise will switch to use the native Promise instead. */
     const Promise: Office.IPromiseConstructor;
     type IPromise<T> = Promise<T>;
 }
@@ -10213,13 +14162,25 @@ declare namespace OfficeExtension {
 declare namespace OfficeExtension {
     /** Collection of tracked objects, contained within a request context. See "context.trackedObjects" for more information. */
     class TrackedObjects {
-        /** Track a new object for automatic adjustment based on surrounding changes in the document. Only some object types require this. If you are using an object across ".sync" calls and outside the sequential execution of a ".run" batch, and get an "InvalidObjectPath" error when setting a property or invoking a method on the object, you needed to have added the object to the tracked object collection when the object was first created. */
+        /** 
+         * Track a new object for automatic adjustment based on surrounding changes in the document. Only some object types require this. If you are using an object across ".sync" calls and outside the sequential execution of a ".run" batch, and get an "InvalidObjectPath" error when setting a property or invoking a method on the object, you needed to have added the object to the tracked object collection when the object was first created. 
+         * 
+         * This method also has the following signature: 
+         * 
+         * `add(objects: ClientObject[]): void;` Where objects is an array of objects to be tracked.
+         */
         add(object: ClientObject): void;
-        /** Track a new object for automatic adjustment based on surrounding changes in the document. Only some object types require this. If you are using an object across ".sync" calls and outside the sequential execution of a ".run" batch, and get an "InvalidObjectPath" error when setting a property or invoking a method on the object, you needed to have added the object to the tracked object collection when the object was first created. */
+        /** Track a set of objects  for automatic adjustment based on surrounding changes in the document. Only some object types require this. If you are using an object across ".sync" calls and outside the sequential execution of a ".run" batch, and get an "InvalidObjectPath" error when setting a property or invoking a method on the object, you needed to have added the object to the tracked object collection when the object was first created. */
         add(objects: ClientObject[]): void;
-        /** Release the memory associated with an object that was previously added to this collection. Having many tracked objects slows down the host application, so please remember to free any objects you add, once you're done using them. You will need to call "context.sync()" before the memory release takes effect. */
+        /** 
+         * Release the memory associated with an object that was previously added to this collection. Having many tracked objects slows down the host application, so please remember to free any objects you add, once you're done using them. You will need to call `context.sync()` before the memory release takes effect.
+         * 
+         * This method also has the following signature: 
+         * 
+         * `remove(objects: ClientObject[]): void;` Where objects is an array of objects to be removed.
+         */
         remove(object: ClientObject): void;
-        /** Release the memory associated with an object that was previously added to this collection. Having many tracked objects slows down the host application, so please remember to free any objects you add, once you're done using them. You will need to call "context.sync()" before the memory release takes effect. */
+        /** Release the memory associated with an object that was previously added to this collection. Having many tracked objects slows down the host application, so please remember to free any objects you add, once you're done using them. You will need to call `context.sync()` before the memory release takes effect. */
         remove(objects: ClientObject[]): void;
     }
 }
@@ -10475,17 +14436,20 @@ declare namespace Excel {
         readonly application: Application;
         readonly runtime: Runtime;
     }
+    interface RunOptions extends OfficeExtension.RunOptions<Session> {
+    /**
+         * Determines whether Excel will delay the batch request until the user exits cell edit mode.
+         *
+         * When false, if the user is in cell edit when the batch request is processed by the host, the batch will automatically fail.
+         * When true, the batch request will be executed immediately if the user is not in cell edit mode, but if the user is in cell edit mode the batch request will be delayed until the user exits cell edit mode.
+         */
+        delayForCellEdit?: boolean;
+    }
     /**
      * Executes a batch script that performs actions on the Excel object model, using a new RequestContext. When the promise is resolved, any tracked objects that were automatically allocated during execution will be released.
      * @param batch - A function that takes in a RequestContext and returns a promise (typically, just the result of "context.sync()"). The context parameter facilitates requests to the Excel application. Since the Office add-in and the Excel application run in two different processes, the RequestContext is required to get access to the Excel object model from the add-in.
      */
     function run<T>(batch: (context: Excel.RequestContext) => Promise<T>): Promise<T>;
-    /**
-     * Executes a batch script that performs actions on the Excel object model, using a new remote RequestContext. When the promise is resolved, any tracked objects that were automatically allocated during execution will be released.
-     * @param requestInfo - The URL of the remote workbook and the request headers to be sent.
-     * @param batch - A function that takes in a RequestContext and returns a promise (typically, just the result of "context.sync()"). The context parameter facilitates requests to the Excel application. Since the Office add-in and the Excel application run in two different processes, the RequestContext is required to get access to the Excel object model from the add-in.
-     */
-    function run<T>(requestInfo: OfficeExtension.RequestUrlAndHeaderInfo | Session, batch: (context: Excel.RequestContext) => Promise<T>): Promise<T>;
     /**
      * Executes a batch script that performs actions on the Excel object model, using the RequestContext of a previously-created object. When the promise is resolved, any tracked objects that were automatically allocated during execution will be released.
      * @param contextObject - A previously-created object. The batch will use the same RequestContext as the passed-in object, which means that any changes applied to the object will be picked up by "context.sync()".
@@ -10499,25 +14463,17 @@ declare namespace Excel {
      */
     function run<T>(object: OfficeExtension.ClientObject, batch: (context: Excel.RequestContext) => Promise<T>): Promise<T>;
     /**
-     * Executes a batch script that performs actions on the Excel object model, using the remote RequestContext of a previously-created API object. When the promise is resolved, any tracked objects that were automatically allocated during execution will be released.
-     * @param requestInfo - The URL of the remote workbook and the request headers to be sent.
-     * @param object - A previously-created API object. The batch will use the same RequestContext as the passed-in object, which means that any changes applied to the object will be picked up by "context.sync()".
-     * @param batch - A function that takes in a RequestContext and returns a promise (typically, just the result of "context.sync()"). The context parameter facilitates requests to the Excel application. Since the Office add-in and the Excel application run in two different processes, the RequestContext is required to get access to the Excel object model from the add-in.
-     */
-    function run<T>(requestInfo: OfficeExtension.RequestUrlAndHeaderInfo | Session, object: OfficeExtension.ClientObject, batch: (context: Excel.RequestContext) => Promise<T>): Promise<T>;
-    /**
      * Executes a batch script that performs actions on the Excel object model, using the RequestContext of previously-created API objects.
      * @param objects - An array of previously-created API objects. The array will be validated to make sure that all of the objects share the same context. The batch will use this shared RequestContext, which means that any changes applied to these objects will be picked up by "context.sync()".
      * @param batch - A function that takes in a RequestContext and returns a promise (typically, just the result of "context.sync()"). The context parameter facilitates requests to the Excel application. Since the Office add-in and the Excel application run in two different processes, the RequestContext is required to get access to the Excel object model from the add-in.
      */
     function run<T>(objects: OfficeExtension.ClientObject[], batch: (context: Excel.RequestContext) => Promise<T>): Promise<T>;
     /**
-     * Executes a batch script that performs actions on the Excel object model, using the remote RequestContext of previously-created API objects.
-     * @param requestInfo - The URL of the remote workbook and the request headers to be sent.
-     * @param objects - An array of previously-created API objects. The array will be validated to make sure that all of the objects share the same context. The batch will use this shared RequestContext, which means that any changes applied to these objects will be picked up by "context.sync()".
-     * @param batch - A function that takes in a RequestContext and returns a promise (typically, just the result of "context.sync()"). The context parameter facilitates requests to the Excel application. Since the Office add-in and the Excel application run in two different processes, the RequestContext is required to get access to the Excel object model from the add-in.
+    * Executes a batch script that performs actions on the Excel object model, using the RequestContext of a previously-created API object. When the promise is resolved, any tracked objects that were automatically allocated during execution will be released.
+    * @param options - The additional options for this Excel.run which specify previous objects, whether to delay the request for cell edit, session info, etc.
+    * @param batch - A function that takes in a RequestContext and returns a promise (typically, just the result of "context.sync()"). The context parameter facilitates requests to the Excel application. Since the Office add-in and the Excel application run in two different processes, the RequestContext is required to get access to the Excel object model from the add-in.
      */
-    function run<T>(requestInfo: OfficeExtension.RequestUrlAndHeaderInfo | Session, objects: OfficeExtension.ClientObject[], batch: (context: Excel.RequestContext) => Promise<T>): Promise<T>;
+    function run<T>(options: Excel.RunOptions, batch: (context: Excel.RequestContext) => Promise<T>): Promise<T>;
     /**
      *
      * Provides information about the binding that raised the SelectionChanged event.
@@ -10529,33 +14485,21 @@ declare namespace Excel {
          *
          * Gets the Binding object that represents the binding that raised the SelectionChanged event.
          *
-         * @remarks
-         * Hosts: Access, Excel, Word
-         *
          * [Api set: ExcelApi 1.2]
          */
         binding: Excel.Binding;
         /**
          *
-         * Gets the number of columns selected. The number of columns selected. If a single cell is selected returns 1.
+         * Gets the number of columns selected.
          *
          * [Api set: ExcelApi 1.2]
-         *
-         * @remarks
-         * If the user makes a non-contiguous selection, the count for the last contiguous selection within the binding is returned.
-         *
-         * For Word, this property will work only for bindings of BindingType "table". If the binding is of type "matrix", null is returned. Also, the call will fail if the table contains merged cells, because the structure of the table must be uniform for this property to work correctly.
          */
         columnCount: number;
         /**
-         * Gets the number of columns selected. The number of columns selected. If a single cell is selected returns 1.
+         *
+         * Gets the number of rows selected.
          *
          * [Api set: ExcelApi 1.2]
-         *
-         * @remarks
-         * If the user makes a non-contiguous selection, the count for the last contiguous selection within the binding is returned.
-         *
-         * For Word, this property will work only for bindings of BindingType "table". If the binding is of type "matrix", null is returned. Also, the call will fail if the table contains merged cells, because the structure of the table must be uniform for this property to work correctly.
          */
         rowCount: number;
         /**
@@ -10842,7 +14786,7 @@ declare namespace Excel {
         tableId: string;
         /**
          *
-         * Gets the type of the event. See Excel.EventType for details.
+         * Gets the type of the event. See Excel.EventType for details. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -10933,15 +14877,25 @@ declare namespace Excel {
     class Application extends OfficeExtension.ClientObject {
         /**
          *
-         * Returns the calculation mode used in the workbook. See Excel.CalculationMode for details.
+         * Returns the calculation mode used in the workbook, as defined by the constants in Excel.CalculationMode. Possible values are: `Automatic`, where Excel controls recalculation; `AutomaticExceptTables`, where Excel controls recalculation but ignores changes in tables; `Manual`, where calculation is done when the user requests it.
          *
          * [Api set: ExcelApi 1.1 for get, 1.8 for set]
          */
         calculationMode: Excel.CalculationMode | "Automatic" | "AutomaticExceptTables" | "Manual";
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.Application): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ApplicationUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: Application): void;
+        set(properties: Excel.Application): void;
         /**
          *
          * Recalculate all currently opened workbooks in Excel.
@@ -10969,6 +14923,18 @@ declare namespace Excel {
         suspendApiCalculationUntilNextSync(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.Application` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.Application` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.Application` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ApplicationLoadOptions): Excel.Application;
         load(option?: string | string[]): Excel.Application;
@@ -10987,106 +14953,116 @@ declare namespace Excel {
     class Workbook extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the Excel application instance that contains this workbook.
+         * Represents the Excel application instance that contains this workbook. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly application: Excel.Application;
         /**
          *
-         * Represents a collection of bindings that are part of the workbook.
+         * Represents a collection of bindings that are part of the workbook. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly bindings: Excel.BindingCollection;
         /**
          *
-         * Represents the collection of custom XML parts contained by this workbook.
+         * Represents the collection of custom XML parts contained by this workbook. Read-only.
          *
          * [Api set: ExcelApi 1.5]
          */
         readonly customXmlParts: Excel.CustomXmlPartCollection;
         /**
          *
-         * Represents all data connections in the workbook.
+         * Represents all data connections in the workbook. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly dataConnections: Excel.DataConnectionCollection;
         /**
          *
-         * Represents a collection of worksheet functions that can be used for computation.
+         * Represents a collection of worksheet functions that can be used for computation. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
         readonly functions: Excel.Functions;
         /**
          *
-         * Represents a collection of workbook scoped named items (named ranges and constants).
+         * Represents a collection of workbook scoped named items (named ranges and constants). Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly names: Excel.NamedItemCollection;
         /**
          *
-         * Represents a collection of PivotTables associated with the workbook.
+         * Represents a collection of PivotTables associated with the workbook. Read-only.
          *
          * [Api set: ExcelApi 1.3]
          */
         readonly pivotTables: Excel.PivotTableCollection;
         /**
          *
-         * Gets the workbook properties.
+         * Gets the workbook properties. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly properties: Excel.DocumentProperties;
         /**
          *
-         * Returns workbook protection object for a workbook.
+         * Returns workbook protection object for a workbook. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly protection: Excel.WorkbookProtection;
         /**
          *
-         * Represents a collection of Settings associated with the workbook.
+         * Represents a collection of Settings associated with the workbook. Read-only.
          *
          * [Api set: ExcelApi 1.4]
          */
         readonly settings: Excel.SettingCollection;
         /**
          *
-         * Represents a collection of styles associated with the workbook.
+         * Represents a collection of styles associated with the workbook. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly styles: Excel.StyleCollection;
         /**
          *
-         * Represents a collection of tables associated with the workbook.
+         * Represents a collection of tables associated with the workbook. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly tables: Excel.TableCollection;
         /**
          *
-         * Represents a collection of worksheets associated with the workbook.
+         * Represents a collection of worksheets associated with the workbook. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly worksheets: Excel.WorksheetCollection;
         /**
          *
-         * Gets the workbook name.
+         * Gets the workbook name. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly name: string;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.Workbook): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.WorkbookUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: Workbook): void;
+        set(properties: Excel.Workbook): void;
         /**
          *
          * Gets the currently active cell from the workbook.
@@ -11100,9 +15076,21 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.1]
          */
-        getSelectedRange(): Excel.Range;
+        getSelectedRange(allowMultiAreas?: boolean): Excel.Range;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.Workbook` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.Workbook` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.Workbook` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.WorkbookLoadOptions): Excel.Workbook;
         load(option?: string | string[]): Excel.Workbook;
@@ -11157,42 +15145,42 @@ declare namespace Excel {
     class Worksheet extends OfficeExtension.ClientObject {
         /**
          *
-         * Returns collection of charts that are part of the worksheet.
+         * Returns collection of charts that are part of the worksheet. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly charts: Excel.ChartCollection;
         /**
          *
-         * Gets an object that can be used to manipulate frozen panes on the worksheet.
+         * Gets an object that can be used to manipulate frozen panes on the worksheet. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly freezePanes: Excel.WorksheetFreezePanes;
         /**
          *
-         * Collection of names scoped to the current worksheet.
+         * Collection of names scoped to the current worksheet. Read-only.
          *
          * [Api set: ExcelApi 1.4]
          */
         readonly names: Excel.NamedItemCollection;
         /**
          *
-         * Collection of PivotTables that are part of the worksheet.
+         * Collection of PivotTables that are part of the worksheet. Read-only.
          *
          * [Api set: ExcelApi 1.3]
          */
         readonly pivotTables: Excel.PivotTableCollection;
         /**
          *
-         * Returns sheet protection object for a worksheet.
+         * Returns sheet protection object for a worksheet. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
         readonly protection: Excel.WorksheetProtection;
         /**
          *
-         * Collection of tables that are part of the worksheet.
+         * Collection of tables that are part of the worksheet. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
@@ -11249,10 +15237,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1 for reading visibility; 1.2 for setting it.]
          */
         visibility: Excel.SheetVisibility | "Visible" | "Hidden" | "VeryHidden";
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.Worksheet): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.WorksheetUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: Worksheet): void;
+        set(properties: Excel.Worksheet): void;
         /**
          *
          * Activate the worksheet in the Excel UI.
@@ -11265,6 +15263,8 @@ declare namespace Excel {
          * Calculates all cells on a worksheet.
          *
          * [Api set: ExcelApi 1.6]
+         *
+         * @param markAllDirty True, to mark all as dirty.
          */
         calculate(markAllDirty: boolean): void;
         /**
@@ -11273,10 +15273,20 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.7]
          * 
-         * @param positionType Specifies where to put the copy relative to the worksheet specified in relativeTo param. Can be Excel.WorksheetPositionType or string equivalent. Must not be Excel.WorksheetPositionType.none or "None".
-         * @param relativeTo Specifies the worksheet that is the basis for intepreting the positionType param. If not specified, the worksheet on which the copy() is called is assumed.
+         * @param positionType Optional.
+         * @param relativeTo Optional.
          */
-        copy(positionType?: Excel.WorksheetPositionType | string, relativeTo?: Excel.Worksheet): Excel.Worksheet;
+        copy(positionType?: Excel.WorksheetPositionType, relativeTo?: Excel.Worksheet): Excel.Worksheet;
+        /**
+         *
+         * Copy a worksheet and place it at the specified position. Return the copied worksheet.
+         *
+         * [Api set: ExcelApi 1.7]
+         *
+         * @param positionType Optional.
+         * @param relativeTo Optional.
+         */
+        copy(positionType?: "None" | "Before" | "After" | "Beginning" | "End", relativeTo?: Excel.Worksheet): Excel.Worksheet;
         /**
          *
          * Deletes the worksheet from the workbook.
@@ -11286,7 +15296,7 @@ declare namespace Excel {
         delete(): void;
         /**
          *
-         * Gets the range object containing the single cell based on row and column numbers. The cell can be outside the bounds of its parent range, so long as it's stays within the worksheet grid.
+         * Gets the range object containing the single cell based on row and column numbers. The cell can be outside the bounds of its parent range, so long as it stays within the worksheet grid.
          *
          * [Api set: ExcelApi 1.1]
          *
@@ -11300,7 +15310,7 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.5]
          *
-         * @param visibleOnly If true, considers only visible worksheets, skipping over any hidden ones.
+         * @param visibleOnly Optional. If true, considers only visible worksheets, skipping over any hidden ones.
          */
         getNext(visibleOnly?: boolean): Excel.Worksheet;
         /**
@@ -11309,7 +15319,7 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.5]
          *
-         * @param visibleOnly If true, considers only visible worksheets, skipping over any hidden ones.
+         * @param visibleOnly Optional. If true, considers only visible worksheets, skipping over any hidden ones.
          */
         getNextOrNullObject(visibleOnly?: boolean): Excel.Worksheet;
         /**
@@ -11318,7 +15328,7 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.5]
          *
-         * @param visibleOnly If true, considers only visible worksheets, skipping over any hidden ones.
+         * @param visibleOnly Optional. If true, considers only visible worksheets, skipping over any hidden ones.
          */
         getPrevious(visibleOnly?: boolean): Excel.Worksheet;
         /**
@@ -11327,7 +15337,7 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.5]
          *
-         * @param visibleOnly If true, considers only visible worksheets, skipping over any hidden ones.
+         * @param visibleOnly Optional. If true, considers only visible worksheets, skipping over any hidden ones.
          */
         getPreviousOrNullObject(visibleOnly?: boolean): Excel.Worksheet;
         /**
@@ -11336,7 +15346,7 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.1]
          *
-         * @param address The address or the name of the range. If not specified, the entire worksheet range is returned.
+         * @param address Optional. The address or the name of the range. If not specified, the entire worksheet range is returned.
          */
         getRange(address?: string): Excel.Range;
         /**
@@ -11353,11 +15363,11 @@ declare namespace Excel {
         getRangeByIndexes(startRow: number, startColumn: number, rowCount: number, columnCount: number): Excel.Range;
         /**
          *
-         * The used range is the smallest range that encompasses any cells that have a value or formatting assigned to them. If the entire worksheet is blank, this function will return the top left cell (i.e.,: it will *not* throw an error).
+         * The used range is the smallest range that encompasses any cells that have a value or formatting assigned to them. If the entire worksheet is blank, this function will return the top left cell (i.e. it will *not* throw an error).
          *
          * [Api set: ExcelApi 1.1]
          *
-         * @param valuesOnly Considers only cells with values as used cells (ignoring formatting). [Api set: ExcelApi 1.2]
+         * @param valuesOnly Optional. If true, considers only cells with values as used cells (ignoring formatting). [Api set: ExcelApi 1.2]
          */
         getUsedRange(valuesOnly?: boolean): Excel.Range;
         /**
@@ -11366,11 +15376,23 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.4]
          *
-         * @param valuesOnly Considers only cells with values as used cells.
+         * @param valuesOnly Optional. Considers only cells with values as used cells.
          */
         getUsedRangeOrNullObject(valuesOnly?: boolean): Excel.Range;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.Worksheet` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.Worksheet` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.Worksheet` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.WorksheetLoadOptions): Excel.Worksheet;
         load(option?: string | string[]): Excel.Worksheet;
@@ -11401,7 +15423,7 @@ declare namespace Excel {
         readonly onDeactivated: OfficeExtension.EventHandlers<Excel.WorksheetDeactivatedEventArgs>;
         /**
          *
-         * Occurs when the selection changed on a specific worksheet.
+         * Occurs when the selection changes on a specific worksheet.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -11423,7 +15445,7 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.1]
          *
-         * @param name The name of the worksheet to be added. If specified, name should be unqiue. If not specified, Excel determines the name of the new worksheet.
+         * @param name Optional. The name of the worksheet to be added. If specified, name should be unqiue. If not specified, Excel determines the name of the new worksheet.
          */
         add(name?: string): Excel.Worksheet;
         /**
@@ -11438,14 +15460,17 @@ declare namespace Excel {
          * Gets the number of worksheets in the collection.
          *
          * [Api set: ExcelApi 1.4]
+         *
+         * @param visibleOnly Optional. If true, considers only visible worksheets, skipping over any hidden ones.
          */
         getCount(visibleOnly?: boolean): OfficeExtension.ClientResult<number>;
         /**
          *
          * Gets the first worksheet in the collection.
-            If true, considers only visible worksheets, skipping over any hidden ones.
          *
          * [Api set: ExcelApi 1.5]
+         *
+         * @param visibleOnly Optional. If true, considers only visible worksheets, skipping over any hidden ones.
          */
         getFirst(visibleOnly?: boolean): Excel.Worksheet;
         /**
@@ -11469,13 +15494,26 @@ declare namespace Excel {
         /**
          *
          * Gets the last worksheet in the collection.
-            If true, considers only visible worksheets, skipping over any hidden ones.
          *
          * [Api set: ExcelApi 1.5]
+         *
+         * @param visibleOnly Optional. If true, considers only visible worksheets, skipping over any hidden ones.
          */
         getLast(visibleOnly?: boolean): Excel.Worksheet;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.WorksheetCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.WorksheetCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.WorksheetCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.WorksheetCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.WorksheetCollection;
         load(option?: string | string[]): Excel.WorksheetCollection;
@@ -11519,14 +15557,14 @@ declare namespace Excel {
     class WorksheetProtection extends OfficeExtension.ClientObject {
         /**
          *
-         * Sheet protection options.
+         * Sheet protection options. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
         readonly options: Excel.WorksheetProtectionOptions;
         /**
          *
-         * Indicates if the worksheet is protected. Read-Only.
+         * Indicates if the worksheet is protected. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
@@ -11537,8 +15575,8 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.2 for options; 1.7 for password]
          *
-         * @param options sheet protection options.
-         * @param password sheet protection password.
+         * @param options Optional. Sheet protection options.
+         * @param password Optional. Sheet protection password.
          */
         protect(options?: Excel.WorksheetProtectionOptions, password?: string): void;
         /**
@@ -11552,6 +15590,18 @@ declare namespace Excel {
         unprotect(password?: string): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.WorksheetProtection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.WorksheetProtection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.WorksheetProtection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.WorksheetProtectionLoadOptions): Excel.WorksheetProtection;
         load(option?: string | string[]): Excel.WorksheetProtection;
@@ -11680,7 +15730,7 @@ declare namespace Excel {
          *
          * @param frozenRange A range that represents the cells to be frozen, or null to remove all frozen panes.
          */
-        freezeAt(frozenRange: Excel.Range | string): void;
+        freezeAt(frozenRange: Range | string): void;
         /**
          *
          * Freeze the first column(s) of the worksheet in place.
@@ -11736,7 +15786,7 @@ declare namespace Excel {
     class Range extends OfficeExtension.ClientObject {
         /**
          *
-         * Collection of ConditionalFormats that intersect the range.
+         * Collection of ConditionalFormats that intersect the range. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -11750,14 +15800,14 @@ declare namespace Excel {
         readonly format: Excel.RangeFormat;
         /**
          *
-         * Represents the range sort of the current range.
+         * Represents the range sort of the current range. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
         readonly sort: Excel.RangeSort;
         /**
          *
-         * The worksheet containing the current range.
+         * The worksheet containing the current range. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
@@ -11830,7 +15880,7 @@ declare namespace Excel {
         formulasR1C1: any[][];
         /**
          *
-         * Represents if all cells of the current range are hidden.
+         * Represents if all cells of the current range are hidden. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
@@ -11844,14 +15894,14 @@ declare namespace Excel {
         hyperlink: Excel.RangeHyperlink;
         /**
          *
-         * Represents if the current range is an entire column.
+         * Represents if the current range is an entire column. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly isEntireColumn: boolean;
         /**
          *
-         * Represents if the current range is an entire row.
+         * Represents if the current range is an entire row. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -11918,16 +15968,26 @@ declare namespace Excel {
         readonly valueTypes: Excel.RangeValueType[][];
         /**
          *
-         * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+         * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
             When setting values to a range, the value argument can be either a single value (string, number or boolean) or a two-dimensional array. If the argument is a single value, it will be applied to all cells in the range.
          *
          * [Api set: ExcelApi 1.1]
          */
         values: any[][];
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.Range): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.RangeUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: Range): void;
+        set(properties: Excel.Range): void;
         /**
          *
          * Calculates a range of cells on a worksheet.
@@ -11941,7 +16001,7 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.1]
          *
-         * @param applyTo Determines the type of clear action. See Excel.ClearApplyTo for details.
+         * @param applyTo Optional. Determines the type of clear action. See Excel.ClearApplyTo for details.
          */
         clear(applyTo?: Excel.ClearApplyTo): void;
         /**
@@ -11950,7 +16010,7 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.1]
          *
-         * @param applyTo Determines the type of clear action. See Excel.ClearApplyTo for details.
+         * @param applyTo Optional. Determines the type of clear action. See Excel.ClearApplyTo for details.
          */
         clear(applyTo?: "All" | "Formats" | "Contents" | "Hyperlinks" | "RemoveHyperlinks"): void;
         /**
@@ -11989,10 +16049,10 @@ declare namespace Excel {
          *
          * @param anotherRange The range object or address or range name.
          */
-        getBoundingRect(anotherRange: Excel.Range | string): Excel.Range;
+        getBoundingRect(anotherRange: Range | string): Excel.Range;
         /**
          *
-         * Gets the range object containing the single cell based on row and column numbers. The cell can be outside the bounds of its parent range, so long as it's stays within the worksheet grid. The returned cell is located relative to the top left cell of the range.
+         * Gets the range object containing the single cell based on row and column numbers. The cell can be outside the bounds of its parent range, so long as it stays within the worksheet grid. The returned cell is located relative to the top left cell of the range.
          *
          * [Api set: ExcelApi 1.1]
          *
@@ -12015,7 +16075,7 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.2]
          *
-         * @param count The number of columns to include in the resulting range. In general, use a positive number to create a range outside the current range. You can also use a negative number to create a range within the current range. The default value is 1.
+         * @param count Optional. The number of columns to include in the resulting range. In general, use a positive number to create a range outside the current range. You can also use a negative number to create a range within the current range. The default value is 1.
          */
         getColumnsAfter(count?: number): Excel.Range;
         /**
@@ -12024,19 +16084,19 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.2]
          *
-         * @param count The number of columns to include in the resulting range. In general, use a positive number to create a range outside the current range. You can also use a negative number to create a range within the current range. The default value is 1.
+         * @param count Optional. The number of columns to include in the resulting range. In general, use a positive number to create a range outside the current range. You can also use a negative number to create a range within the current range. The default value is 1.
          */
         getColumnsBefore(count?: number): Excel.Range;
         /**
          *
-         * Gets an object that represents the entire column of the range (for example, if the current range represents cells "B4:E11", it's `getEntireColumn` is a range that represents columns "B:E").
+         * Gets an object that represents the entire column of the range (for example, if the current range represents cells "B4:E11", its `getEntireColumn` is a range that represents columns "B:E").
          *
          * [Api set: ExcelApi 1.1]
          */
         getEntireColumn(): Excel.Range;
         /**
          *
-         * Gets an object that represents the entire row of the range (for example, if the current range represents cells "B4:E11", it's `GetEntireRow` is a range that represents rows "4:11").
+         * Gets an object that represents the entire row of the range (for example, if the current range represents cells "B4:E11", its `GetEntireRow` is a range that represents rows "4:11").
          *
          * [Api set: ExcelApi 1.1]
          */
@@ -12056,7 +16116,7 @@ declare namespace Excel {
          *
          * @param anotherRange The range object or range address that will be used to determine the intersection of ranges.
          */
-        getIntersection(anotherRange: Excel.Range | string): Excel.Range;
+        getIntersection(anotherRange: Range | string): Excel.Range;
         /**
          *
          * Gets the range object that represents the rectangular intersection of the given ranges. If no intersection is found, will return a null object.
@@ -12065,7 +16125,7 @@ declare namespace Excel {
          *
          * @param anotherRange The range object or range address that will be used to determine the intersection of ranges.
          */
-        getIntersectionOrNullObject(anotherRange: Excel.Range | string): Excel.Range;
+        getIntersectionOrNullObject(anotherRange: Range | string): Excel.Range;
         /**
          *
          * Gets the last cell within the range. For example, the last cell of "B2:D5" is "D5".
@@ -12104,7 +16164,7 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.2]
          *
          * @param deltaRows The number of rows by which to expand the bottom-right corner, relative to the current range. Use a positive number to expand the range, or a negative number to decrease it.
-         * @param deltaColumns The number of columnsby which to expand the bottom-right corner, relative to the current range. Use a positive number to expand the range, or a negative number to decrease it.
+         * @param deltaColumns The number of columns by which to expand the bottom-right corner, relative to the current range. Use a positive number to expand the range, or a negative number to decrease it.
          */
         getResizedRange(deltaRows: number, deltaColumns: number): Excel.Range;
         /**
@@ -12122,7 +16182,7 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.2]
          *
-         * @param count The number of rows to include in the resulting range. In general, use a positive number to create a range outside the current range. You can also use a negative number to create a range within the current range. The default value is 1.
+         * @param count Optional. The number of rows to include in the resulting range. In general, use a positive number to create a range outside the current range. You can also use a negative number to create a range within the current range. The default value is 1.
          */
         getRowsAbove(count?: number): Excel.Range;
         /**
@@ -12131,7 +16191,7 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.2]
          *
-         * @param count The number of rows to include in the resulting range. In general, use a positive number to create a range outside the current range. You can also use a negative number to create a range within the current range. The default value is 1.
+         * @param count Optional. The number of rows to include in the resulting range. In general, use a positive number to create a range outside the current range. You can also use a negative number to create a range within the current range. The default value is 1.
          */
         getRowsBelow(count?: number): Excel.Range;
         /**
@@ -12190,17 +16250,17 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.2]
          *
-         * @param across Set true to merge cells in each row of the specified range as separate merged cells. The default value is false.
+         * @param across Optional. Set true to merge cells in each row of the specified range as separate merged cells. The default value is false.
          */
         merge(across?: boolean): void;
         /**
          *
          * Selects the specified range in the Excel UI.
-            If multiple selection is not supported on the platform and the range has multiple areas, the "InvalidReference" error will be returned.
+            If true, a multi-area range can be selected; otherwise, only the first area will be selected. Default is false.
          *
          * [Api set: ExcelApi 1.1]
          */
-        select(): void;
+        select(allowMultiAreas?: boolean): void;
         /**
          *
          * Displays the card for an active cell if it has rich value content.
@@ -12217,6 +16277,18 @@ declare namespace Excel {
         unmerge(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.Range` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.Range` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.Range` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.RangeLoadOptions): Excel.Range;
         load(option?: string | string[]): Excel.Range;
@@ -12241,6 +16313,12 @@ declare namespace Excel {
      * [Api set: ExcelApi 1.2]
      */
     interface RangeReference {
+        /**
+         *
+         * Gets or sets the address of the range; for example 'SheetName!A1:B5'.
+         *
+         * [Api set: ExcelApi 1.2]
+         */
         address: string;
     }
     /**
@@ -12288,14 +16366,14 @@ declare namespace Excel {
     class RangeView extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents a collection of range views associated with the range.
+         * Represents a collection of range views associated with the range. Read-only.
          *
          * [Api set: ExcelApi 1.3]
          */
         readonly rows: Excel.RangeViewCollection;
         /**
          *
-         * Represents the cell addresses of the RangeView.
+         * Represents the cell addresses of the RangeView. Read-only.
          *
          * [Api set: ExcelApi 1.3]
          */
@@ -12365,15 +16443,25 @@ declare namespace Excel {
         readonly valueTypes: Excel.RangeValueType[][];
         /**
          *
-         * Represents the raw values of the specified range view. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+         * Represents the raw values of the specified range view. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
          *
          * [Api set: ExcelApi 1.3]
          */
         values: any[][];
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.RangeView): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.RangeViewUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: RangeView): void;
+        set(properties: Excel.RangeView): void;
         /**
          *
          * Gets the parent range associated with the current RangeView.
@@ -12383,6 +16471,18 @@ declare namespace Excel {
         getRange(): Excel.Range;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.RangeView` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.RangeView` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.RangeView` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.RangeViewLoadOptions): Excel.RangeView;
         load(option?: string | string[]): Excel.RangeView;
@@ -12410,7 +16510,7 @@ declare namespace Excel {
         getCount(): OfficeExtension.ClientResult<number>;
         /**
          *
-         * Gets a RangeView Row via it's index. Zero-Indexed.
+         * Gets a RangeView Row via its index. Zero-Indexed.
          *
          * [Api set: ExcelApi 1.3]
          *
@@ -12419,6 +16519,18 @@ declare namespace Excel {
         getItemAt(index: number): Excel.RangeView;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.RangeViewCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.RangeViewCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.RangeViewCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.RangeViewCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.RangeViewCollection;
         load(option?: string | string[]): Excel.RangeViewCollection;
@@ -12427,7 +16539,7 @@ declare namespace Excel {
     }
     /**
      *
-     * Represents a collection of worksheet objects that are part of the workbook.
+     * Represents a collection of key-value pair setting objects that are part of the workbook. The scope is limited to per file and add-in (task-pane or content) combination.
      *
      * [Api set: ExcelApi 1.4]
      */
@@ -12471,6 +16583,18 @@ declare namespace Excel {
         getItemOrNullObject(key: string): Excel.Setting;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.SettingCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.SettingCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.SettingCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.SettingCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.SettingCollection;
         load(option?: string | string[]): Excel.SettingCollection;
@@ -12486,7 +16610,7 @@ declare namespace Excel {
     }
     /**
      *
-     * Setting represents a key-value pair of a setting persisted to the document.
+     * Setting represents a key-value pair of a setting persisted to the document (per file per add-in). These custom key-value pair can be used to store state or lifecycle information needed by the content or task-pane add-in. Note that settings are persisted in the document and hence it is not a place to store any sensitive or protected information such as user information and password.
      *
      * [Api set: ExcelApi 1.4]
      */
@@ -12508,10 +16632,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.4]
          */
         value: any;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.Setting): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.SettingUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: Setting): void;
+        set(properties: Excel.Setting): void;
         /**
          *
          * Deletes the setting.
@@ -12521,6 +16655,18 @@ declare namespace Excel {
         delete(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.Setting` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.Setting` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.Setting` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.SettingLoadOptions): Excel.Setting;
         load(option?: string | string[]): Excel.Setting;
@@ -12532,7 +16678,7 @@ declare namespace Excel {
     }
     /**
      *
-     * A collection of all the nameditem objects that are part of the workbook or worksheet, depending on how it was reached.
+     * A collection of all the NamedItem objects that are part of the workbook or worksheet, depending on how it was reached.
      *
      * [Api set: ExcelApi 1.1]
      */
@@ -12547,10 +16693,10 @@ declare namespace Excel {
          *
          * @param name The name of the named item.
          * @param reference The formula or the range that the name will refer to.
-         * @param comment The comment associated with the named item
+         * @param comment Optional. The comment associated with the named item.
          * @returns
          */
-        add(name: string, reference: Excel.Range | string, comment?: string): Excel.NamedItem;
+        add(name: string, reference: Range | string, comment?: string): Excel.NamedItem;
         /**
          *
          * Adds a new name to the collection of the given scope using the user's locale for the formula.
@@ -12559,7 +16705,7 @@ declare namespace Excel {
          *
          * @param name The "name" of the named item.
          * @param formula The formula in the user's locale that the name will refer to.
-         * @param comment The comment associated with the named item
+         * @param comment Optional. The comment associated with the named item.
          * @returns
          */
         addFormulaLocal(name: string, formula: string, comment?: string): Excel.NamedItem;
@@ -12572,24 +16718,36 @@ declare namespace Excel {
         getCount(): OfficeExtension.ClientResult<number>;
         /**
          *
-         * Gets a nameditem object using its name
+         * Gets a NamedItem object using its name.
          *
          * [Api set: ExcelApi 1.1]
          *
-         * @param name nameditem name.
+         * @param name Nameditem name.
          */
         getItem(name: string): Excel.NamedItem;
         /**
          *
-         * Gets a nameditem object using its name. If the nameditem object does not exist, will return a null object.
+         * Gets a NamedItem object using its name. If the nameditem object does not exist, will return a null object.
          *
          * [Api set: ExcelApi 1.4]
          *
-         * @param name nameditem name.
+         * @param name Nameditem name.
          */
         getItemOrNullObject(name: string): Excel.NamedItem;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.NamedItemCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.NamedItemCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.NamedItemCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.NamedItemCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.NamedItemCollection;
         load(option?: string | string[]): Excel.NamedItemCollection;
@@ -12598,21 +16756,21 @@ declare namespace Excel {
     }
     /**
      *
-     * Represents a defined name for a range of cells or value. Names can be primitive named objects (as seen in the type below), range object, reference to a range. This object can be used to obtain range object associated with names.
+     * Represents a defined name for a range of cells or value. Names can be primitive named objects (as seen in the type below), range object, or a reference to a range. This object can be used to obtain range object associated with names.
      *
      * [Api set: ExcelApi 1.1]
      */
     class NamedItem extends OfficeExtension.ClientObject {
         /**
          *
-         * Returns an object containing values and types of the named item.
+         * Returns an object containing values and types of the named item. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly arrayValues: Excel.NamedItemArrayValues;
         /**
          *
-         * Returns the worksheet on which the named item is scoped to. Throws an error if the items is scoped to the workbook instead.
+         * Returns the worksheet on which the named item is scoped to. Throws an error if the item is scoped to the workbook instead.
          *
          * [Api set: ExcelApi 1.4]
          */
@@ -12647,7 +16805,7 @@ declare namespace Excel {
         readonly name: string;
         /**
          *
-         * Indicates whether the name is scoped to the workbook or to a specific worksheet. Read-only.
+         * Indicates whether the name is scoped to the workbook or to a specific worksheet. Possible values are: Worksheet, Workbook. Read-only.
          *
          * [Api set: ExcelApi 1.4]
          */
@@ -12673,10 +16831,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          */
         visible: boolean;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.NamedItem): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.NamedItemUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: NamedItem): void;
+        set(properties: Excel.NamedItem): void;
         /**
          *
          * Deletes the given name.
@@ -12700,6 +16868,18 @@ declare namespace Excel {
         getRangeOrNullObject(): Excel.Range;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.NamedItem` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.NamedItem` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.NamedItem` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.NamedItemLoadOptions): Excel.NamedItem;
         load(option?: string | string[]): Excel.NamedItem;
@@ -12732,6 +16912,18 @@ declare namespace Excel {
         readonly values: any[][];
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.NamedItemArrayValues` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.NamedItemArrayValues` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.NamedItemArrayValues` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.NamedItemArrayValuesLoadOptions): Excel.NamedItemArrayValues;
         load(option?: string | string[]): Excel.NamedItemArrayValues;
@@ -12792,6 +16984,18 @@ declare namespace Excel {
         getText(): OfficeExtension.ClientResult<string>;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.Binding` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.Binding` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.Binding` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.BindingLoadOptions): Excel.Binding;
         load(option?: string | string[]): Excel.Binding;
@@ -12808,7 +17012,7 @@ declare namespace Excel {
         readonly onDataChanged: OfficeExtension.EventHandlers<Excel.BindingDataChangedEventArgs>;
         /**
          *
-         * Occurs when the selection is changed within the binding.
+         * Occurs when the selected content in the binding is changed.
          *
          * [Api set: ExcelApi 1.2]
          */
@@ -12841,7 +17045,7 @@ declare namespace Excel {
          * @param bindingType Type of binding. See Excel.BindingType.
          * @param id Name of binding.
          */
-        add(range: Excel.Range | string, bindingType: Excel.BindingType, id: string): Excel.Binding;
+        add(range: Range | string, bindingType: Excel.BindingType, id: string): Excel.Binding;
         /**
          *
          * Add a new binding to a particular Range.
@@ -12852,7 +17056,7 @@ declare namespace Excel {
          * @param bindingType Type of binding. See Excel.BindingType.
          * @param id Name of binding.
          */
-        add(range: Excel.Range | string, bindingType: "Range" | "Table" | "Text", id: string): Excel.Binding;
+        add(range: Range | string, bindingType: "Range" | "Table" | "Text", id: string): Excel.Binding;
         /**
          *
          * Add a new binding based on a named item in the workbook.
@@ -12935,6 +17139,18 @@ declare namespace Excel {
         getItemOrNullObject(id: string): Excel.Binding;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.BindingCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.BindingCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.BindingCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.BindingCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.BindingCollection;
         load(option?: string | string[]): Excel.BindingCollection;
@@ -12963,10 +17179,10 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.1]
          *
-         * @param address A Range object, or a string address or name of the range representing the data source. If the address does not contain a sheet name, the currently-active sheet is used. [Api set: ExcelApi 1.1 for string parameter; 1.3 for accepting a Range object as well]
+         * @param address A Range object, or a string address or name of the range representing the data source. If the address does not contain a sheet name, the currently-active sheet is used. [Api set: ExcelApi 1.1 / 1.3.  Prior to ExcelApi 1.3, this parameter must be a string. Starting with Excel Api 1.3, this parameter may be a Range object or a string.]
          * @param hasHeaders Boolean value that indicates whether the data being imported has column labels. If the source does not contain headers (i.e,. when this property set to false), Excel will automatically generate header shifting the data down by one row.
          */
-        add(address: Excel.Range | string, hasHeaders: boolean): Excel.Table;
+        add(address: Range | string, hasHeaders: boolean): Excel.Table;
         /**
          *
          * Gets the number of tables in the collection.
@@ -13003,13 +17219,25 @@ declare namespace Excel {
         getItemOrNullObject(key: string): Excel.Table;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.TableCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.TableCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.TableCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.TableCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.TableCollection;
         load(option?: string | string[]): Excel.TableCollection;
         load(option?: OfficeExtension.LoadOption): Excel.TableCollection;
         /**
          *
-         * Occurs when data changed on any table in a workbook, or a worksheet.
+         * Occurs when data changes on any table in a workbook, or a worksheet.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -13025,28 +17253,28 @@ declare namespace Excel {
     class Table extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents a collection of all the columns in the table.
+         * Represents a collection of all the columns in the table. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly columns: Excel.TableColumnCollection;
         /**
          *
-         * Represents a collection of all the rows in the table.
+         * Represents a collection of all the rows in the table. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly rows: Excel.TableRowCollection;
         /**
          *
-         * Represents the sorting for the table.
+         * Represents the sorting for the table. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
         readonly sort: Excel.TableSort;
         /**
          *
-         * The worksheet containing the current table.
+         * The worksheet containing the current table. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
@@ -13121,10 +17349,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          */
         style: string;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.Table): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.TableUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: Table): void;
+        set(properties: Excel.Table): void;
         /**
          *
          * Clears all the filters currently applied on the table.
@@ -13183,6 +17421,18 @@ declare namespace Excel {
         reapplyFilters(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.Table` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.Table` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.Table` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.TableLoadOptions): Excel.Table;
         load(option?: string | string[]): Excel.Table;
@@ -13192,14 +17442,14 @@ declare namespace Excel {
         }): Excel.Table;
         /**
          *
-         * Occurs when data changed on a specific table.
+         * Occurs when data in cells changes on a specific table.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly onChanged: OfficeExtension.EventHandlers<Excel.TableChangedEventArgs>;
         /**
          *
-         * Occurs when the selection changed on a specific table.
+         * Occurs when the selection changes on a specific table.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -13228,9 +17478,9 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.1 requires an index smaller than the total column count; 1.4 allows index to be optional (null or -1) and will append a column at the end; 1.4 allows name parameter at creation time.]
          *
-         * @param index Specifies the relative position of the new column. If null or -1, the addition happens at the end. Columns with a higher index will be shifted to the side. Zero-indexed.
-         * @param values A 2-dimensional array of unformatted values of the table column.
-         * @param name Specifies the name of the new column. If null, the default name will be used.
+         * @param index Optional. Specifies the relative position of the new column. If null or -1, the addition happens at the end. Columns with a higher index will be shifted to the side. Zero-indexed.
+         * @param values Optional. A 2-dimensional array of unformatted values of the table column.
+         * @param name Optional. Specifies the name of the new column. If null, the default name will be used.
          */
         add(index?: number, values?: Array<Array<boolean | string | number>> | boolean | string | number, name?: string): Excel.TableColumn;
         /**
@@ -13269,6 +17519,18 @@ declare namespace Excel {
         getItemOrNullObject(key: number | string): Excel.TableColumn;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.TableColumnCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.TableColumnCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.TableColumnCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.TableColumnCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.TableColumnCollection;
         load(option?: string | string[]): Excel.TableColumnCollection;
@@ -13284,7 +17546,7 @@ declare namespace Excel {
     class TableColumn extends OfficeExtension.ClientObject {
         /**
          *
-         * Retrieve the filter applied to the column.
+         * Retrieve the filter applied to the column. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
@@ -13312,15 +17574,25 @@ declare namespace Excel {
         name: string;
         /**
          *
-         * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+         * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
          *
          * [Api set: ExcelApi 1.1]
          */
         values: any[][];
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.TableColumn): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.TableColumnUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: TableColumn): void;
+        set(properties: Excel.TableColumn): void;
         /**
          *
          * Deletes the column from the table.
@@ -13358,6 +17630,18 @@ declare namespace Excel {
         getTotalRowRange(): Excel.Range;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.TableColumn` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.TableColumn` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.TableColumn` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.TableColumnLoadOptions): Excel.TableColumn;
         load(option?: string | string[]): Excel.TableColumn;
@@ -13399,8 +17683,8 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.1 for adding a single row; 1.4 allows adding of multiple rows.]
          *
-         * @param index Specifies the relative position of the new row. If null or -1, the addition happens at the end. Any rows below the inserted row are shifted downwards. Zero-indexed.
-         * @param values A 2-dimensional array of unformatted values of the table row.
+         * @param index Optional. Specifies the relative position of the new row. If null or -1, the addition happens at the end. Any rows below the inserted row are shifted downwards. Zero-indexed.
+         * @param values Optional. A 2-dimensional array of unformatted values of the table row.
          */
         add(index?: number, values?: Array<Array<boolean | string | number>> | boolean | string | number): Excel.TableRow;
         /**
@@ -13426,6 +17710,18 @@ declare namespace Excel {
         getItemAt(index: number): Excel.TableRow;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.TableRowCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.TableRowCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.TableRowCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.TableRowCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.TableRowCollection;
         load(option?: string | string[]): Excel.TableRowCollection;
@@ -13453,15 +17749,25 @@ declare namespace Excel {
         readonly index: number;
         /**
          *
-         * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+         * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
          *
          * [Api set: ExcelApi 1.1]
          */
         values: any[][];
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.TableRow): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.TableRowUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: TableRow): void;
+        set(properties: Excel.TableRow): void;
         /**
          *
          * Deletes the row from the table.
@@ -13478,6 +17784,18 @@ declare namespace Excel {
         getRange(): Excel.Range;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.TableRow` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.TableRow` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.TableRow` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.TableRowLoadOptions): Excel.TableRow;
         load(option?: string | string[]): Excel.TableRow;
@@ -13496,28 +17814,28 @@ declare namespace Excel {
     class RangeFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Collection of border objects that apply to the overall range.
+         * Collection of border objects that apply to the overall range. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly borders: Excel.RangeBorderCollection;
         /**
          *
-         * Returns the fill object defined on the overall range.
+         * Returns the fill object defined on the overall range. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly fill: Excel.RangeFill;
         /**
          *
-         * Returns the font object defined on the overall range.
+         * Returns the font object defined on the overall range. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly font: Excel.RangeFont;
         /**
          *
-         * Returns the format protection object for a range.
+         * Returns the format protection object for a range. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
@@ -13564,7 +17882,7 @@ declare namespace Excel {
         useStandardHeight: boolean;
         /**
          *
-         * Indicates whether the columnwidth of the Range object equals the standard width of the sheet.
+         * Indicates whether the column width of the Range object equals the standard width of the sheet.
             Returns True if the column width of the Range object equals the standard width of the sheet.
             Returns Null if the range contains more than one column and the columns aren't all the same height.
             Returns False otherwise.
@@ -13586,10 +17904,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          */
         wrapText: boolean;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.RangeFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.RangeFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: RangeFormat): void;
+        set(properties: Excel.RangeFormat): void;
         /**
          *
          * Changes the width of the columns of the current range to achieve the best fit, based on the current data in the columns.
@@ -13606,6 +17934,18 @@ declare namespace Excel {
         autofitRows(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.RangeFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.RangeFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.RangeFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.RangeFormatLoadOptions): Excel.RangeFormat;
         load(option?: string | string[]): Excel.RangeFormat;
@@ -13636,12 +17976,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.2]
          */
         locked: boolean;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.FormatProtection): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.FormatProtectionUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: FormatProtection): void;
+        set(properties: Excel.FormatProtection): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.FormatProtection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.FormatProtection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.FormatProtection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.FormatProtectionLoadOptions): Excel.FormatProtection;
         load(option?: string | string[]): Excel.FormatProtection;
@@ -13665,10 +18027,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          */
         color: string;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.RangeFill): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.RangeFillUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: RangeFill): void;
+        set(properties: Excel.RangeFill): void;
         /**
          *
          * Resets the range background.
@@ -13678,6 +18050,18 @@ declare namespace Excel {
         clear(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.RangeFill` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.RangeFill` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.RangeFill` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.RangeFillLoadOptions): Excel.RangeFill;
         load(option?: string | string[]): Excel.RangeFill;
@@ -13722,12 +18106,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          */
         weight: Excel.BorderWeight | "Hairline" | "Thin" | "Medium" | "Thick";
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.RangeBorder): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.RangeBorderUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: RangeBorder): void;
+        set(properties: Excel.RangeBorder): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.RangeBorder` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.RangeBorder` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.RangeBorder` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.RangeBorderLoadOptions): Excel.RangeBorder;
         load(option?: string | string[]): Excel.RangeBorder;
@@ -13755,7 +18161,7 @@ declare namespace Excel {
         readonly count: number;
         /**
          *
-         * Gets a border object using its name
+         * Gets a border object using its name.
          *
          * [Api set: ExcelApi 1.1]
          *
@@ -13764,7 +18170,7 @@ declare namespace Excel {
         getItem(index: Excel.BorderIndex): Excel.RangeBorder;
         /**
          *
-         * Gets a border object using its name
+         * Gets a border object using its name.
          *
          * [Api set: ExcelApi 1.1]
          *
@@ -13773,7 +18179,7 @@ declare namespace Excel {
         getItem(index: "EdgeTop" | "EdgeBottom" | "EdgeLeft" | "EdgeRight" | "InsideVertical" | "InsideHorizontal" | "DiagonalDown" | "DiagonalUp"): Excel.RangeBorder;
         /**
          *
-         * Gets a border object using its index
+         * Gets a border object using its index.
          *
          * [Api set: ExcelApi 1.1]
          *
@@ -13782,6 +18188,18 @@ declare namespace Excel {
         getItemAt(index: number): Excel.RangeBorder;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.RangeBorderCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.RangeBorderCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.RangeBorderCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.RangeBorderCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.RangeBorderCollection;
         load(option?: string | string[]): Excel.RangeBorderCollection;
@@ -13837,12 +18255,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          */
         underline: Excel.RangeUnderlineStyle | "None" | "Single" | "Double" | "SingleAccountant" | "DoubleAccountant";
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.RangeFont): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.RangeFontUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: RangeFont): void;
+        set(properties: Excel.RangeFont): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.RangeFont` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.RangeFont` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.RangeFont` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.RangeFontLoadOptions): Excel.RangeFont;
         load(option?: string | string[]): Excel.RangeFont;
@@ -13875,10 +18315,10 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          *
          * @param type Represents the type of a chart. See Excel.ChartType for details.
-         * @param sourceData The range corresponding to the source data.
-         * @param seriesBy Specifies the way columns or rows are used as data series on the chart. See Excel.ChartSeriesBy for details.
+         * @param sourceData The Range object corresponding to the source data.
+         * @param seriesBy Optional. Specifies the way columns or rows are used as data series on the chart. See Excel.ChartSeriesBy for details.
          */
-        add(type: Excel.ChartType, sourceData: Excel.Range | string, seriesBy?: Excel.ChartSeriesBy): Excel.Chart;
+        add(type: Excel.ChartType, sourceData: Range | string, seriesBy?: Excel.ChartSeriesBy): Excel.Chart;
         /**
          *
          * Creates a new chart.
@@ -13886,10 +18326,10 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          *
          * @param type Represents the type of a chart. See Excel.ChartType for details.
-         * @param sourceData The range corresponding to the source data.
-         * @param seriesBy Specifies the way columns or rows are used as data series on the chart. See Excel.ChartSeriesBy for details.
+         * @param sourceData The Range object corresponding to the source data.
+         * @param seriesBy Optional. Specifies the way columns or rows are used as data series on the chart. See Excel.ChartSeriesBy for details.
          */
-        add(type: "Invalid" | "ColumnClustered" | "ColumnStacked" | "ColumnStacked100" | "3DColumnClustered" | "3DColumnStacked" | "3DColumnStacked100" | "BarClustered" | "BarStacked" | "BarStacked100" | "3DBarClustered" | "3DBarStacked" | "3DBarStacked100" | "LineStacked" | "LineStacked100" | "LineMarkers" | "LineMarkersStacked" | "LineMarkersStacked100" | "PieOfPie" | "PieExploded" | "3DPieExploded" | "BarOfPie" | "XYScatterSmooth" | "XYScatterSmoothNoMarkers" | "XYScatterLines" | "XYScatterLinesNoMarkers" | "AreaStacked" | "AreaStacked100" | "3DAreaStacked" | "3DAreaStacked100" | "DoughnutExploded" | "RadarMarkers" | "RadarFilled" | "Surface" | "SurfaceWireframe" | "SurfaceTopView" | "SurfaceTopViewWireframe" | "Bubble" | "Bubble3DEffect" | "StockHLC" | "StockOHLC" | "StockVHLC" | "StockVOHLC" | "CylinderColClustered" | "CylinderColStacked" | "CylinderColStacked100" | "CylinderBarClustered" | "CylinderBarStacked" | "CylinderBarStacked100" | "CylinderCol" | "ConeColClustered" | "ConeColStacked" | "ConeColStacked100" | "ConeBarClustered" | "ConeBarStacked" | "ConeBarStacked100" | "ConeCol" | "PyramidColClustered" | "PyramidColStacked" | "PyramidColStacked100" | "PyramidBarClustered" | "PyramidBarStacked" | "PyramidBarStacked100" | "PyramidCol" | "3DColumn" | "Line" | "3DLine" | "3DPie" | "Pie" | "XYScatter" | "3DArea" | "Area" | "Doughnut" | "Radar", sourceData: Excel.Range | string, seriesBy?: "Auto" | "Columns" | "Rows"): Excel.Chart;
+        add(type: "Invalid" | "ColumnClustered" | "ColumnStacked" | "ColumnStacked100" | "3DColumnClustered" | "3DColumnStacked" | "3DColumnStacked100" | "BarClustered" | "BarStacked" | "BarStacked100" | "3DBarClustered" | "3DBarStacked" | "3DBarStacked100" | "LineStacked" | "LineStacked100" | "LineMarkers" | "LineMarkersStacked" | "LineMarkersStacked100" | "PieOfPie" | "PieExploded" | "3DPieExploded" | "BarOfPie" | "XYScatterSmooth" | "XYScatterSmoothNoMarkers" | "XYScatterLines" | "XYScatterLinesNoMarkers" | "AreaStacked" | "AreaStacked100" | "3DAreaStacked" | "3DAreaStacked100" | "DoughnutExploded" | "RadarMarkers" | "RadarFilled" | "Surface" | "SurfaceWireframe" | "SurfaceTopView" | "SurfaceTopViewWireframe" | "Bubble" | "Bubble3DEffect" | "StockHLC" | "StockOHLC" | "StockVHLC" | "StockVOHLC" | "CylinderColClustered" | "CylinderColStacked" | "CylinderColStacked100" | "CylinderBarClustered" | "CylinderBarStacked" | "CylinderBarStacked100" | "CylinderCol" | "ConeColClustered" | "ConeColStacked" | "ConeColStacked100" | "ConeBarClustered" | "ConeBarStacked" | "ConeBarStacked100" | "ConeCol" | "PyramidColClustered" | "PyramidColStacked" | "PyramidColStacked100" | "PyramidBarClustered" | "PyramidBarStacked" | "PyramidBarStacked100" | "PyramidCol" | "3DColumn" | "Line" | "3DLine" | "3DPie" | "Pie" | "XYScatter" | "3DArea" | "Area" | "Doughnut" | "Radar", sourceData: Range | string, seriesBy?: "Auto" | "Columns" | "Rows"): Excel.Chart;
         /**
          *
          * Returns the number of charts in the worksheet.
@@ -13927,6 +18367,18 @@ declare namespace Excel {
         getItemOrNullObject(name: string): Excel.Chart;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.ChartCollection;
         load(option?: string | string[]): Excel.ChartCollection;
@@ -13942,14 +18394,14 @@ declare namespace Excel {
     class Chart extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents chart axes.
+         * Represents chart axes. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly axes: Excel.ChartAxes;
         /**
          *
-         * Represents the datalabels on the chart.
+         * Represents the datalabels on the chart. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
@@ -13963,28 +18415,28 @@ declare namespace Excel {
         readonly format: Excel.ChartAreaFormat;
         /**
          *
-         * Represents the legend for the chart.
+         * Represents the legend for the chart. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly legend: Excel.ChartLegend;
         /**
          *
-         * Represents either a single series or collection of series in the chart.
+         * Represents either a single series or collection of series in the chart. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly series: Excel.ChartSeriesCollection;
         /**
          *
-         * Represents the title of the specified chart, including the text, visibility, position and formating of the title.
+         * Represents the title of the specified chart, including the text, visibility, position, and formating of the title. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly title: Excel.ChartTitle;
         /**
          *
-         * The worksheet containing the current chart.
+         * The worksheet containing the current chart. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
@@ -14045,10 +18497,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          */
         width: number;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.Chart): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: Chart): void;
+        set(properties: Excel.Chart): void;
         /**
          *
          * Deletes the chart object.
@@ -14065,7 +18527,7 @@ declare namespace Excel {
          *
          * @param height (Optional) The desired height of the resulting image.
          * @param width (Optional) The desired width of the resulting image.
-         * @param fittingMode (Optional) The method used to scale the chart to the specified to the specified dimensions (if both height and width are set)."
+         * @param fittingMode (Optional) The method used to scale the chart to the specified to the specified dimensions (if both height and width are set).
          */
         getImage(width?: number, height?: number, fittingMode?: Excel.ImageFittingMode): OfficeExtension.ClientResult<string>;
         /**
@@ -14077,7 +18539,7 @@ declare namespace Excel {
          *
          * @param height (Optional) The desired height of the resulting image.
          * @param width (Optional) The desired width of the resulting image.
-         * @param fittingMode (Optional) The method used to scale the chart to the specified to the specified dimensions (if both height and width are set)."
+         * @param fittingMode (Optional) The method used to scale the chart to the specified to the specified dimensions (if both height and width are set).
          */
         getImage(width?: number, height?: number, fittingMode?: "Fit" | "FitAndCenter" | "Fill"): OfficeExtension.ClientResult<string>;
         /**
@@ -14087,9 +18549,9 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          *
          * @param sourceData The range corresponding to the source data.
-         * @param seriesBy Specifies the way columns or rows are used as data series on the chart. Can be one of the following: Auto (default), Rows, Columns. See Excel.ChartSeriesBy for details.
+         * @param seriesBy Specifies the way columns or rows are used as data series on the chart. Can be one of the following: Auto (default), Rows, and Columns. See Excel.ChartSeriesBy for details.
          */
-        setData(sourceData: Excel.Range | string, seriesBy?: Excel.ChartSeriesBy): void;
+        setData(sourceData: Range | string, seriesBy?: Excel.ChartSeriesBy): void;
         /**
          *
          * Resets the source data for the chart.
@@ -14097,9 +18559,9 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          *
          * @param sourceData The range corresponding to the source data.
-         * @param seriesBy Specifies the way columns or rows are used as data series on the chart. Can be one of the following: Auto (default), Rows, Columns. See Excel.ChartSeriesBy for details.
+         * @param seriesBy Specifies the way columns or rows are used as data series on the chart. Can be one of the following: Auto (default), Rows, and Columns. See Excel.ChartSeriesBy for details.
          */
-        setData(sourceData: Excel.Range | string, seriesBy?: "Auto" | "Columns" | "Rows"): void;
+        setData(sourceData: Range | string, seriesBy?: "Auto" | "Columns" | "Rows"): void;
         /**
          *
          * Positions the chart relative to cells on the worksheet.
@@ -14109,9 +18571,21 @@ declare namespace Excel {
          * @param startCell The start cell. This is where the chart will be moved to. The start cell is the top-left or top-right cell, depending on the user's right-to-left display settings.
          * @param endCell (Optional) The end cell. If specified, the chart's width and height will be set to fully cover up this cell/range.
          */
-        setPosition(startCell: Excel.Range | string, endCell?: Excel.Range | string): void;
+        setPosition(startCell: Range | string, endCell?: Range | string): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.Chart` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.Chart` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.Chart` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartLoadOptions): Excel.Chart;
         load(option?: string | string[]): Excel.Chart;
@@ -14130,31 +18604,53 @@ declare namespace Excel {
     class ChartAreaFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the border format of chart area, which includes color, linestyle and weight.
+         * Represents the border format of chart area, which includes color, linestyle, and weight. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly border: Excel.ChartBorder;
         /**
          *
-         * Represents the fill format of an object, which includes background formatting information.
+         * Represents the fill format of an object, which includes background formatting information. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly fill: Excel.ChartFill;
         /**
          *
-         * Represents the font attributes (font name, font size, color, etc.) for the current object.
+         * Represents the font attributes (font name, font size, color, etc.) for the current object. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly font: Excel.ChartFont;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartAreaFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartAreaFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartAreaFormat): void;
+        set(properties: Excel.ChartAreaFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartAreaFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartAreaFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartAreaFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartAreaFormatLoadOptions): Excel.ChartAreaFormat;
         load(option?: string | string[]): Excel.ChartAreaFormat;
@@ -14186,8 +18682,8 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.7]
          *
-         * @param name Name of the series.
-         * @param index Index value of the series to be added. Zero-indexed.
+         * @param name Optional. Name of the series.
+         * @param index Optional. Index value of the series to be added. Zero-indexed.
          */
         add(name?: string, index?: number): Excel.ChartSeries;
         /**
@@ -14208,6 +18704,18 @@ declare namespace Excel {
         getItemAt(index: number): Excel.ChartSeries;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartSeriesCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartSeriesCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartSeriesCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartSeriesCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.ChartSeriesCollection;
         load(option?: string | string[]): Excel.ChartSeriesCollection;
@@ -14223,21 +18731,21 @@ declare namespace Excel {
     class ChartSeries extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the formatting of a chart series, which includes fill and line formatting.
+         * Represents the formatting of a chart series, which includes fill and line formatting. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly format: Excel.ChartSeriesFormat;
         /**
          *
-         * Represents a collection of all points in the series.
+         * Represents a collection of all points in the series. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly points: Excel.ChartPointsCollection;
         /**
          *
-         * Represents a collection of trendlines in the series.
+         * Represents a collection of trendlines in the series. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -14330,15 +18838,25 @@ declare namespace Excel {
         showShadow: boolean;
         /**
          *
-         * Boolean value representing if the series is smooth or not. Only applicable for line and scatter charts.
+         * Boolean value representing if the series is smooth or not. Only applicable to line and scatter charts.
          *
          * [Api set: ExcelApi 1.7]
          */
         smooth: boolean;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartSeries): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartSeriesUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartSeries): void;
+        set(properties: Excel.ChartSeries): void;
         /**
          *
          * Deletes the chart series.
@@ -14354,7 +18872,7 @@ declare namespace Excel {
          *
          * @param sourceData The Range object corresponding to the source data.
          */
-        setBubbleSizes(sourceData: Excel.Range): void;
+        setBubbleSizes(sourceData: Range): void;
         /**
          *
          * Set values for a chart series. For scatter chart, it means Y axis values.
@@ -14363,7 +18881,7 @@ declare namespace Excel {
          *
          * @param sourceData The Range object corresponding to the source data.
          */
-        setValues(sourceData: Excel.Range): void;
+        setValues(sourceData: Range): void;
         /**
          *
          * Set values of X axis for a chart series. Only works for scatter charts.
@@ -14372,9 +18890,21 @@ declare namespace Excel {
          *
          * @param sourceData The Range object corresponding to the source data.
          */
-        setXAxisValues(sourceData: Excel.Range): void;
+        setXAxisValues(sourceData: Range): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartSeries` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartSeries` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartSeries` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartSeriesLoadOptions): Excel.ChartSeries;
         load(option?: string | string[]): Excel.ChartSeries;
@@ -14386,31 +18916,53 @@ declare namespace Excel {
     }
     /**
      *
-     * encapsulates the format properties for the chart series
+     * Encapsulates the format properties for the chart series
      *
      * [Api set: ExcelApi 1.1]
      */
     class ChartSeriesFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the fill format of a chart series, which includes background formating information.
+         * Represents the fill format of a chart series, which includes background formating information. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly fill: Excel.ChartFill;
         /**
          *
-         * Represents line formatting.
+         * Represents line formatting. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly line: Excel.ChartLineFormat;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartSeriesFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartSeriesFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartSeriesFormat): void;
+        set(properties: Excel.ChartSeriesFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartSeriesFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartSeriesFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartSeriesFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartSeriesFormatLoadOptions): Excel.ChartSeriesFormat;
         load(option?: string | string[]): Excel.ChartSeriesFormat;
@@ -14454,6 +19006,18 @@ declare namespace Excel {
         getItemAt(index: number): Excel.ChartPoint;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartPointsCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartPointsCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartPointsCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartPointsCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.ChartPointsCollection;
         load(option?: string | string[]): Excel.ChartPointsCollection;
@@ -14469,7 +19033,7 @@ declare namespace Excel {
     class ChartPoint extends OfficeExtension.ClientObject {
         /**
          *
-         * Returns the data label of a chart point.
+         * Returns the data label of a chart point. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -14483,7 +19047,7 @@ declare namespace Excel {
         readonly format: Excel.ChartPointFormat;
         /**
          *
-         * Represents whether a data point has datalabel. Not applicable for surface charts.
+         * Represents whether a data point has a data label. Not applicable for surface charts.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -14523,12 +19087,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          */
         readonly value: any;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartPoint): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartPointUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartPoint): void;
+        set(properties: Excel.ChartPoint): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartPoint` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartPoint` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartPoint` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartPointLoadOptions): Excel.ChartPoint;
         load(option?: string | string[]): Excel.ChartPoint;
@@ -14547,24 +19133,46 @@ declare namespace Excel {
     class ChartPointFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the border format of a chart data point, which includes color, style and weight information.
+         * Represents the border format of a chart data point, which includes color, style, and weight information. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly border: Excel.ChartBorder;
         /**
          *
-         * Represents the fill format of a chart, which includes background formating information.
+         * Represents the fill format of a chart, which includes background formating information. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly fill: Excel.ChartFill;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartPointFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartPointFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartPointFormat): void;
+        set(properties: Excel.ChartPointFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartPointFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartPointFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartPointFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartPointFormatLoadOptions): Excel.ChartPointFormat;
         load(option?: string | string[]): Excel.ChartPointFormat;
@@ -14583,37 +19191,47 @@ declare namespace Excel {
     class ChartAxes extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the category axis in a chart.
+         * Represents the category axis in a chart. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly categoryAxis: Excel.ChartAxis;
         /**
          *
-         * Represents the series axis of a 3-dimensional chart.
+         * Represents the series axis of a 3-dimensional chart. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly seriesAxis: Excel.ChartAxis;
         /**
          *
-         * Represents the value axis in an axis.
+         * Represents the value axis in an axis. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly valueAxis: Excel.ChartAxis;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartAxes): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartAxesUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartAxes): void;
+        set(properties: Excel.ChartAxes): void;
         /**
          *
          * Returns the specific axis identified by type and group.
          *
          * [Api set: ExcelApi 1.7]
          *
-         * @param type Specifies the axis type. See Excel.ChartAxis for details.
-         * @param group Specifies the axis group. See Excel.ChartAxis for details.
+         * @param type Specifies the axis type. See Excel.ChartAxisType for details.
+         * @param group Optional. Specifies the axis group. See Excel.ChartAxisGroup for details.
          */
         getItem(type: Excel.ChartAxisType, group?: Excel.ChartAxisGroup): Excel.ChartAxis;
         /**
@@ -14622,12 +19240,24 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.7]
          *
-         * @param type Specifies the axis type. See Excel.ChartAxis for details.
-         * @param group Specifies the axis group. See Excel.ChartAxis for details.
+         * @param type Specifies the axis type. See Excel.ChartAxisType for details.
+         * @param group Optional. Specifies the axis group. See Excel.ChartAxisGroup for details.
          */
         getItem(type: "Invalid" | "Category" | "Value" | "Series", group?: "Primary" | "Secondary"): Excel.ChartAxis;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartAxes` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartAxes` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartAxes` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartAxesLoadOptions): Excel.ChartAxes;
         load(option?: string | string[]): Excel.ChartAxes;
@@ -14646,35 +19276,35 @@ declare namespace Excel {
     class ChartAxis extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the formatting of a chart object, which includes line and font formatting.
+         * Represents the formatting of a chart object, which includes line and font formatting. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly format: Excel.ChartAxisFormat;
         /**
          *
-         * Returns a gridlines object that represents the major gridlines for the specified axis.
+         * Returns a Gridlines object that represents the major gridlines for the specified axis. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly majorGridlines: Excel.ChartGridlines;
         /**
          *
-         * Returns a Gridlines object that represents the minor gridlines for the specified axis.
+         * Returns a Gridlines object that represents the minor gridlines for the specified axis. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly minorGridlines: Excel.ChartGridlines;
         /**
          *
-         * Represents the axis title.
+         * Represents the axis title. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly title: Excel.ChartAxisTitle;
         /**
          *
-         * Represents the group for the specified axis. See Excel.ChartAxisGroup for details.
+         * Represents the group for the specified axis. See Excel.ChartAxisGroup for details. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -14695,7 +19325,7 @@ declare namespace Excel {
         categoryType: Excel.ChartAxisCategoryType | "Automatic" | "TextAxis" | "DateAxis";
         /**
          *
-         * Represents the custom axis display unit value. Read Only. To set this property, please use the SetCustomDisplayUnit(double) method.
+         * Represents the custom axis display unit value. Read-only. To set this property, please use the SetCustomDisplayUnit(double) method.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -14709,14 +19339,14 @@ declare namespace Excel {
         displayUnit: Excel.ChartAxisDisplayUnit | "None" | "Hundreds" | "Thousands" | "TenThousands" | "HundredThousands" | "Millions" | "TenMillions" | "HundredMillions" | "Billions" | "Trillions" | "Custom";
         /**
          *
-         * Represents the height, in points, of the chart axis. Null if the axis's not visible.
+         * Represents the height, in points, of the chart axis. Null if the axis is not visible. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly height: number;
         /**
          *
-         * Represents the distance, in points, from the left edge of the axis to the left of chart area. Null if the axis's not visible.
+         * Represents the distance, in points, from the left edge of the axis to the left of chart area. Null if the axis is not visible. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -14779,7 +19409,7 @@ declare namespace Excel {
         minorTimeUnitScale: Excel.ChartAxisTimeUnit | "Days" | "Months" | "Years";
         /**
          *
-         * Represents the interval between two minor tick marks. "Can be set to a numeric value or an empty string (for automatic axis values). The returned value is always a number.
+         * Represents the interval between two minor tick marks. Can be set to a numeric value or an empty string (for automatic axis values). The returned value is always a number.
          *
          * [Api set: ExcelApi 1.1]
          */
@@ -14828,7 +19458,7 @@ declare namespace Excel {
         tickMarkSpacing: number;
         /**
          *
-         * Represents the distance, in points, from the top edge of the axis to the top of chart area. Null if the axis's not visible.
+         * Represents the distance, in points, from the top edge of the axis to the top of chart area. Null if the axis is not visible. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -14849,15 +19479,25 @@ declare namespace Excel {
         visible: boolean;
         /**
          *
-         * Represents the width, in points, of the chart axis. Null if the axis's not visible.
+         * Represents the width, in points, of the chart axis. Null if the axis is not visible. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly width: number;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartAxis): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartAxisUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartAxis): void;
+        set(properties: Excel.ChartAxis): void;
         /**
          *
          * Sets all the category names for the specified axis.
@@ -14866,18 +19506,30 @@ declare namespace Excel {
          *
          * @param sourceData The Range object corresponding to the source data.
          */
-        setCategoryNames(sourceData: Excel.Range): void;
+        setCategoryNames(sourceData: Range): void;
         /**
          *
          * Sets the axis display unit to a custom value.
          *
          * [Api set: ExcelApi 1.7]
          *
-         * @param value Custom value of the display unit
+         * @param value Custom value of the display unit.
          */
         setCustomDisplayUnit(value: number): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartAxis` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartAxis` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartAxis` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartAxisLoadOptions): Excel.ChartAxis;
         load(option?: string | string[]): Excel.ChartAxis;
@@ -14896,24 +19548,46 @@ declare namespace Excel {
     class ChartAxisFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the font attributes (font name, font size, color, etc.) for a chart axis element.
+         * Represents the font attributes (font name, font size, color, etc.) for a chart axis element. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly font: Excel.ChartFont;
         /**
          *
-         * Represents chart line formatting.
+         * Represents chart line formatting. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly line: Excel.ChartLineFormat;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartAxisFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartAxisFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartAxisFormat): void;
+        set(properties: Excel.ChartAxisFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartAxisFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartAxisFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartAxisFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartAxisFormatLoadOptions): Excel.ChartAxisFormat;
         load(option?: string | string[]): Excel.ChartAxisFormat;
@@ -14932,7 +19606,7 @@ declare namespace Excel {
     class ChartAxisTitle extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the formatting of chart axis title.
+         * Represents the formatting of chart axis title. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
@@ -14951,12 +19625,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          */
         visible: boolean;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartAxisTitle): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartAxisTitleUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartAxisTitle): void;
+        set(properties: Excel.ChartAxisTitle): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartAxisTitle` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartAxisTitle` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartAxisTitle` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartAxisTitleLoadOptions): Excel.ChartAxisTitle;
         load(option?: string | string[]): Excel.ChartAxisTitle;
@@ -14975,17 +19671,39 @@ declare namespace Excel {
     class ChartAxisTitleFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the font attributes, such as font name, font size, color, etc. of chart axis title object.
+         * Represents the font attributes, such as font name, font size, color, etc. of chart axis title object. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly font: Excel.ChartFont;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartAxisTitleFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartAxisTitleFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartAxisTitleFormat): void;
+        set(properties: Excel.ChartAxisTitleFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartAxisTitleFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartAxisTitleFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartAxisTitleFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartAxisTitleFormatLoadOptions): Excel.ChartAxisTitleFormat;
         load(option?: string | string[]): Excel.ChartAxisTitleFormat;
@@ -15004,7 +19722,7 @@ declare namespace Excel {
     class ChartDataLabels extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the format of chart data labels, which includes fill and font formatting.
+         * Represents the format of chart data labels, which includes fill and font formatting. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
@@ -15065,12 +19783,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          */
         showValue: boolean;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartDataLabels): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartDataLabelsUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartDataLabels): void;
+        set(properties: Excel.ChartDataLabels): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartDataLabels` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartDataLabels` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartDataLabels` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartDataLabelsLoadOptions): Excel.ChartDataLabels;
         load(option?: string | string[]): Excel.ChartDataLabels;
@@ -15143,12 +19883,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.7]
          */
         showValue: boolean;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartDataLabel): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartDataLabelUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartDataLabel): void;
+        set(properties: Excel.ChartDataLabel): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartDataLabel` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartDataLabel` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartDataLabel` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartDataLabelLoadOptions): Excel.ChartDataLabel;
         load(option?: string | string[]): Excel.ChartDataLabel;
@@ -15167,24 +19929,46 @@ declare namespace Excel {
     class ChartDataLabelFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the fill format of the current chart data label.
+         * Represents the fill format of the current chart data label. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly fill: Excel.ChartFill;
         /**
          *
-         * Represents the font attributes (font name, font size, color, etc.) for a chart data label.
+         * Represents the font attributes (font name, font size, color, etc.) for a chart data label. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly font: Excel.ChartFont;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartDataLabelFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartDataLabelFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartDataLabelFormat): void;
+        set(properties: Excel.ChartDataLabelFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartDataLabelFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartDataLabelFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartDataLabelFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartDataLabelFormatLoadOptions): Excel.ChartDataLabelFormat;
         load(option?: string | string[]): Excel.ChartDataLabelFormat;
@@ -15203,7 +19987,7 @@ declare namespace Excel {
     class ChartGridlines extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the formatting of chart gridlines.
+         * Represents the formatting of chart gridlines. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
@@ -15215,12 +19999,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          */
         visible: boolean;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartGridlines): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartGridlinesUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartGridlines): void;
+        set(properties: Excel.ChartGridlines): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartGridlines` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartGridlines` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartGridlines` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartGridlinesLoadOptions): Excel.ChartGridlines;
         load(option?: string | string[]): Excel.ChartGridlines;
@@ -15239,17 +20045,39 @@ declare namespace Excel {
     class ChartGridlinesFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents chart line formatting.
+         * Represents chart line formatting. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly line: Excel.ChartLineFormat;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartGridlinesFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartGridlinesFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartGridlinesFormat): void;
+        set(properties: Excel.ChartGridlinesFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartGridlinesFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartGridlinesFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartGridlinesFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartGridlinesFormatLoadOptions): Excel.ChartGridlinesFormat;
         load(option?: string | string[]): Excel.ChartGridlinesFormat;
@@ -15268,14 +20096,14 @@ declare namespace Excel {
     class ChartLegend extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the formatting of a chart legend, which includes fill and font formatting.
+         * Represents the formatting of a chart legend, which includes fill and font formatting. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly format: Excel.ChartLegendFormat;
         /**
          *
-         * Represents a collection of legendEntries in the legend.
+         * Represents a collection of legendEntries in the legend. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -15336,12 +20164,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.7]
          */
         width: number;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartLegend): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartLegendUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartLegend): void;
+        set(properties: Excel.ChartLegend): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartLegend` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartLegend` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartLegend` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartLegendLoadOptions): Excel.ChartLegend;
         load(option?: string | string[]): Excel.ChartLegend;
@@ -15365,12 +20215,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.7]
          */
         visible: boolean;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartLegendEntry): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartLegendEntryUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartLegendEntry): void;
+        set(properties: Excel.ChartLegendEntry): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartLegendEntry` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartLegendEntry` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartLegendEntry` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartLegendEntryLoadOptions): Excel.ChartLegendEntry;
         load(option?: string | string[]): Excel.ChartLegendEntry;
@@ -15407,6 +20279,18 @@ declare namespace Excel {
         getItemAt(index: number): Excel.ChartLegendEntry;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartLegendEntryCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartLegendEntryCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartLegendEntryCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartLegendEntryCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.ChartLegendEntryCollection;
         load(option?: string | string[]): Excel.ChartLegendEntryCollection;
@@ -15422,24 +20306,46 @@ declare namespace Excel {
     class ChartLegendFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the fill format of an object, which includes background formating information.
+         * Represents the fill format of an object, which includes background formating information. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly fill: Excel.ChartFill;
         /**
          *
-         * Represents the font attributes such as font name, font size, color, etc. of a chart legend.
+         * Represents the font attributes such as font name, font size, color, etc. of a chart legend. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly font: Excel.ChartFont;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartLegendFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartLegendFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartLegendFormat): void;
+        set(properties: Excel.ChartLegendFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartLegendFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartLegendFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartLegendFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartLegendFormatLoadOptions): Excel.ChartLegendFormat;
         load(option?: string | string[]): Excel.ChartLegendFormat;
@@ -15458,14 +20364,14 @@ declare namespace Excel {
     class ChartTitle extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the formatting of a chart title, which includes fill and font formatting.
+         * Represents the formatting of a chart title, which includes fill and font formatting. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly format: Excel.ChartTitleFormat;
         /**
          *
-         * Returns the height, in points, of the chart title. Read-only. Null if chart title is not visible.
+         * Returns the height, in points, of the chart title. Null if chart title is not visible. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -15479,7 +20385,7 @@ declare namespace Excel {
         horizontalAlignment: Excel.ChartTextHorizontalAlignment | "Center" | "Left" | "Right" | "Justify" | "Distributed";
         /**
          *
-         * Represents the distance, in points, from the left edge of chart title to the left edge of chart area. Null if chart title's not visible.
+         * Represents the distance, in points, from the left edge of chart title to the left edge of chart area. Null if chart title is not visible.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -15521,7 +20427,7 @@ declare namespace Excel {
         textOrientation: number;
         /**
          *
-         * Represents the distance, in points, from the top edge of chart title to the top of chart area. Null if chart title's not visible.
+         * Represents the distance, in points, from the top edge of chart title to the top of chart area. Null if chart title is not visible.
          *
          * [Api set: ExcelApi 1.7]
          */
@@ -15542,18 +20448,28 @@ declare namespace Excel {
         visible: boolean;
         /**
          *
-         * Returns the width, in points, of the chart title. Read-only. Null if chart title is not visible.
+         * Returns the width, in points, of the chart title. Null if chart title is not visible. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly width: number;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartTitle): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartTitleUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartTitle): void;
+        set(properties: Excel.ChartTitle): void;
         /**
          *
-         * Get the substring of a chart title. Line break '\n' also counts one charater.
+         * Get the substring of a chart title. Line break '\n' also counts one character.
          *
          * [Api set: ExcelApi 1.7]
          *
@@ -15567,11 +20483,23 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.7]
          *
-         * @param formula a string that present the formula to set
+         * @param formula A string that represents the formula to set.
          */
         setFormula(formula: string): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartTitle` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartTitle` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartTitle` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartTitleLoadOptions): Excel.ChartTitle;
         load(option?: string | string[]): Excel.ChartTitle;
@@ -15595,12 +20523,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.7]
          */
         readonly font: Excel.ChartFont;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartFormatString): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartFormatStringUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartFormatString): void;
+        set(properties: Excel.ChartFormatString): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartFormatString` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartFormatString` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartFormatString` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartFormatStringLoadOptions): Excel.ChartFormatString;
         load(option?: string | string[]): Excel.ChartFormatString;
@@ -15619,31 +20569,53 @@ declare namespace Excel {
     class ChartTitleFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the border format of chart title, which includes color, linestyle and weight.
+         * Represents the border format of chart title, which includes color, linestyle, and weight. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly border: Excel.ChartBorder;
         /**
          *
-         * Represents the fill format of an object, which includes background formating information.
+         * Represents the fill format of an object, which includes background formating information. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly fill: Excel.ChartFill;
         /**
          *
-         * Represents the font attributes (font name, font size, color, etc.) for an object.
+         * Represents the font attributes (font name, font size, color, etc.) for an object. Read-only.
          *
          * [Api set: ExcelApi 1.1]
          */
         readonly font: Excel.ChartFont;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartTitleFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartTitleFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartTitleFormat): void;
+        set(properties: Excel.ChartTitleFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartTitleFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartTitleFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartTitleFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartTitleFormatLoadOptions): Excel.ChartTitleFormat;
         load(option?: string | string[]): Excel.ChartTitleFormat;
@@ -15712,12 +20684,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.7]
          */
         weight: number;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartBorder): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartBorderUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartBorder): void;
+        set(properties: Excel.ChartBorder): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartBorder` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartBorder` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartBorder` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartBorderLoadOptions): Excel.ChartBorder;
         load(option?: string | string[]): Excel.ChartBorder;
@@ -15729,7 +20723,7 @@ declare namespace Excel {
     }
     /**
      *
-     * Enapsulates the formatting options for line elements.
+     * Encapsulates the formatting options for line elements.
      *
      * [Api set: ExcelApi 1.1]
      */
@@ -15755,10 +20749,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.7]
          */
         weight: number;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartLineFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartLineFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartLineFormat): void;
+        set(properties: Excel.ChartLineFormat): void;
         /**
          *
          * Clear the line format of a chart element.
@@ -15768,6 +20772,18 @@ declare namespace Excel {
         clear(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartLineFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartLineFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartLineFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartLineFormatLoadOptions): Excel.ChartLineFormat;
         load(option?: string | string[]): Excel.ChartLineFormat;
@@ -15826,12 +20842,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.1]
          */
         underline: Excel.ChartUnderlineStyle | "None" | "Single";
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartFont): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartFontUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartFont): void;
+        set(properties: Excel.ChartFont): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartFont` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartFont` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartFont` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartFontLoadOptions): Excel.ChartFont;
         load(option?: string | string[]): Excel.ChartFont;
@@ -15890,10 +20928,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.7]
          */
         type: Excel.ChartTrendlineType | "Linear" | "Exponential" | "Logarithmic" | "MovingAverage" | "Polynomial" | "Power";
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartTrendline): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartTrendlineUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartTrendline): void;
+        set(properties: Excel.ChartTrendline): void;
         /**
          *
          * Delete the trendline object.
@@ -15903,6 +20951,18 @@ declare namespace Excel {
         delete(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartTrendline` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartTrendline` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartTrendline` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartTrendlineLoadOptions): Excel.ChartTrendline;
         load(option?: string | string[]): Excel.ChartTrendline;
@@ -15957,6 +21017,18 @@ declare namespace Excel {
         getItem(index: number): Excel.ChartTrendline;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartTrendlineCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartTrendlineCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartTrendlineCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartTrendlineCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.ChartTrendlineCollection;
         load(option?: string | string[]): Excel.ChartTrendlineCollection;
@@ -15972,17 +21044,39 @@ declare namespace Excel {
     class ChartTrendlineFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents chart line formatting.
+         * Represents chart line formatting. Read-only.
          *
          * [Api set: ExcelApi 1.7]
          */
         readonly line: Excel.ChartLineFormat;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ChartTrendlineFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ChartTrendlineFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ChartTrendlineFormat): void;
+        set(properties: Excel.ChartTrendlineFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ChartTrendlineFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ChartTrendlineFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ChartTrendlineFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ChartTrendlineFormatLoadOptions): Excel.ChartTrendlineFormat;
         load(option?: string | string[]): Excel.ChartTrendlineFormat;
@@ -16006,10 +21100,10 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.2]
          *
          * @param fields The list of conditions to sort on.
-         * @param matchCase Whether to have the casing impact string ordering.
-         * @param hasHeaders Whether the range has a header.
-         * @param orientation Whether the operation is sorting rows or columns.
-         * @param method The ordering method used for Chinese characters.
+         * @param matchCase Optional. Whether to have the casing impact string ordering.
+         * @param hasHeaders Optional. Whether the range has a header.
+         * @param orientation Optional. Whether the operation is sorting rows or columns.
+         * @param method Optional. The ordering method used for Chinese characters.
          */
         apply(fields: Excel.SortField[], matchCase?: boolean, hasHeaders?: boolean, orientation?: Excel.SortOrientation, method?: Excel.SortMethod): void;
         /**
@@ -16019,10 +21113,10 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.2]
          *
          * @param fields The list of conditions to sort on.
-         * @param matchCase Whether to have the casing impact string ordering.
-         * @param hasHeaders Whether the range has a header.
-         * @param orientation Whether the operation is sorting rows or columns.
-         * @param method The ordering method used for Chinese characters.
+         * @param matchCase Optional. Whether to have the casing impact string ordering.
+         * @param hasHeaders Optional. Whether the range has a header.
+         * @param orientation Optional. Whether the operation is sorting rows or columns.
+         * @param method Optional. The ordering method used for Chinese characters.
          */
         apply(fields: Excel.SortField[], matchCase?: boolean, hasHeaders?: boolean, orientation?: "Rows" | "Columns", method?: "PinYin" | "StrokeCount"): void;
         toJSON(): {
@@ -16038,21 +21132,21 @@ declare namespace Excel {
     class TableSort extends OfficeExtension.ClientObject {
         /**
          *
-         * Represents the current conditions used to last sort the table.
+         * Represents the current conditions used to last sort the table. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
         readonly fields: Excel.SortField[];
         /**
          *
-         * Represents whether the casing impacted the last sort of the table.
+         * Represents whether the casing impacted the last sort of the table. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
         readonly matchCase: boolean;
         /**
          *
-         * Represents Chinese character ordering method last used to sort the table.
+         * Represents Chinese character ordering method last used to sort the table. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
@@ -16064,8 +21158,8 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.2]
          *
          * @param fields The list of conditions to sort on.
-         * @param matchCase Whether to have the casing impact string ordering.
-         * @param method The ordering method used for Chinese characters.
+         * @param matchCase Optional. Whether to have the casing impact string ordering.
+         * @param method Optional. The ordering method used for Chinese characters.
          */
         apply(fields: Excel.SortField[], matchCase?: boolean, method?: Excel.SortMethod): void;
         /**
@@ -16075,8 +21169,8 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.2]
          *
          * @param fields The list of conditions to sort on.
-         * @param matchCase Whether to have the casing impact string ordering.
-         * @param method The ordering method used for Chinese characters.
+         * @param matchCase Optional. Whether to have the casing impact string ordering.
+         * @param method Optional. The ordering method used for Chinese characters.
          */
         apply(fields: Excel.SortField[], matchCase?: boolean, method?: "PinYin" | "StrokeCount"): void;
         /**
@@ -16095,6 +21189,18 @@ declare namespace Excel {
         reapply(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.TableSort` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.TableSort` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.TableSort` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.TableSortLoadOptions): Excel.TableSort;
         load(option?: string | string[]): Excel.TableSort;
@@ -16163,7 +21269,7 @@ declare namespace Excel {
     class Filter extends OfficeExtension.ClientObject {
         /**
          *
-         * The currently applied filter on the given column.
+         * The currently applied filter on the given column. Read-only.
          *
          * [Api set: ExcelApi 1.2]
          */
@@ -16206,24 +21312,24 @@ declare namespace Excel {
         applyCellColorFilter(color: string): void;
         /**
          *
-         * Apply a "Icon" filter to the column for the given criteria strings.
+         * Apply an "Icon" filter to the column for the given criteria strings.
          *
          * [Api set: ExcelApi 1.2]
          *
          * @param criteria1 The first criteria string.
-         * @param criteria2 The second criteria string.
-         * @param oper The operator that describes how the two criteria are joined.
+         * @param criteria2 Optional. The second criteria string.
+         * @param oper Optional. The operator that describes how the two criteria are joined.
          */
         applyCustomFilter(criteria1: string, criteria2?: string, oper?: Excel.FilterOperator): void;
         /**
          *
-         * Apply a "Icon" filter to the column for the given criteria strings.
+         * Apply an "Icon" filter to the column for the given criteria strings.
          *
          * [Api set: ExcelApi 1.2]
          *
          * @param criteria1 The first criteria string.
-         * @param criteria2 The second criteria string.
-         * @param oper The operator that describes how the two criteria are joined.
+         * @param criteria2 Optional. The second criteria string.
+         * @param oper Optional. The operator that describes how the two criteria are joined.
          */
         applyCustomFilter(criteria1: string, criteria2?: string, oper?: "And" | "Or"): void;
         /**
@@ -16255,7 +21361,7 @@ declare namespace Excel {
         applyFontColorFilter(color: string): void;
         /**
          *
-         * Apply a "Icon" filter to the column for the given icon.
+         * Apply an "Icon" filter to the column for the given icon.
          *
          * [Api set: ExcelApi 1.2]
          *
@@ -16286,9 +21392,9 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.2]
          *
-         * @param values The list of values to show.
+         * @param values The list of values to show. This must be an array of strings or an array of Excel.FilterDateTime objects.
          */
-        applyValuesFilter(values: Array<string | Excel.FilterDatetime>): void;
+        applyValuesFilter(values: Array<string | FilterDatetime>): void;
         /**
          *
          * Clear the filter on the given column.
@@ -16298,6 +21404,18 @@ declare namespace Excel {
         clear(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.Filter` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.Filter` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.Filter` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.FilterLoadOptions): Excel.Filter;
         load(option?: string | string[]): Excel.Filter;
@@ -16372,7 +21490,7 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.2]
          */
-        values?: Array<string | Excel.FilterDatetime>;
+        values?: Array<string | FilterDatetime>;
     }
     /**
      *
@@ -16473,6 +21591,18 @@ declare namespace Excel {
         getOnlyItemOrNullObject(): Excel.CustomXmlPart;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.CustomXmlPartScopedCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.CustomXmlPartScopedCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.CustomXmlPartScopedCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.CustomXmlPartScopedCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.CustomXmlPartScopedCollection;
         load(option?: string | string[]): Excel.CustomXmlPartScopedCollection;
@@ -16503,7 +21633,7 @@ declare namespace Excel {
          *
          * [Api set: ExcelApi 1.5]
          *
-         * @param namespaceUri
+         * @param namespaceUri This must be a fully qualified schema URI; for example, "http://schemas.contoso.com/review/1.0".
          */
         getByNamespace(namespaceUri: string): Excel.CustomXmlPartScopedCollection;
         /**
@@ -16534,6 +21664,18 @@ declare namespace Excel {
         getItemOrNullObject(id: string): Excel.CustomXmlPart;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.CustomXmlPartCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.CustomXmlPartCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.CustomXmlPartCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.CustomXmlPartCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.CustomXmlPartCollection;
         load(option?: string | string[]): Excel.CustomXmlPartCollection;
@@ -16586,6 +21728,18 @@ declare namespace Excel {
         setXml(xml: string): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.CustomXmlPart` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.CustomXmlPart` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.CustomXmlPart` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.CustomXmlPartLoadOptions): Excel.CustomXmlPart;
         load(option?: string | string[]): Excel.CustomXmlPart;
@@ -16638,6 +21792,18 @@ declare namespace Excel {
         refreshAll(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.PivotTableCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.PivotTableCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.PivotTableCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.PivotTableCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.PivotTableCollection;
         load(option?: string | string[]): Excel.PivotTableCollection;
@@ -16660,7 +21826,7 @@ declare namespace Excel {
         readonly worksheet: Excel.Worksheet;
         /**
          *
-         * Id of the PivotTable.
+         * Id of the PivotTable. Read-only.
          *
          * [Api set: ExcelApi 1.5]
          */
@@ -16672,10 +21838,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.3]
          */
         name: string;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.PivotTable): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.PivotTableUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: PivotTable): void;
+        set(properties: Excel.PivotTable): void;
         /**
          *
          * Refreshes the PivotTable.
@@ -16685,6 +21861,18 @@ declare namespace Excel {
         refresh(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.PivotTable` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.PivotTable` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.PivotTable` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.PivotTableLoadOptions): Excel.PivotTable;
         load(option?: string | string[]): Excel.PivotTable;
@@ -16785,12 +21973,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.7]
          */
         title: string;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.DocumentProperties): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.DocumentPropertiesUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: DocumentProperties): void;
+        set(properties: Excel.DocumentProperties): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.DocumentProperties` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.DocumentProperties` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.DocumentProperties` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.DocumentPropertiesLoadOptions): Excel.DocumentProperties;
         load(option?: string | string[]): Excel.DocumentProperties;
@@ -16828,10 +22038,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.7]
          */
         value: any;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.CustomProperty): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.CustomPropertyUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: CustomProperty): void;
+        set(properties: Excel.CustomProperty): void;
         /**
          *
          * Deletes the custom property.
@@ -16841,6 +22061,18 @@ declare namespace Excel {
         delete(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.CustomProperty` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.CustomProperty` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.CustomProperty` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.CustomPropertyLoadOptions): Excel.CustomProperty;
         load(option?: string | string[]): Excel.CustomProperty;
@@ -16903,6 +22135,18 @@ declare namespace Excel {
         getItemOrNullObject(key: string): Excel.CustomProperty;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.CustomPropertyCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.CustomPropertyCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.CustomPropertyCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.CustomPropertyCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.CustomPropertyCollection;
         load(option?: string | string[]): Excel.CustomPropertyCollection;
@@ -16971,6 +22215,18 @@ declare namespace Excel {
         getItemAt(index: number): Excel.ConditionalFormat;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ConditionalFormatCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ConditionalFormatCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ConditionalFormatCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ConditionalFormatCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.ConditionalFormatCollection;
         load(option?: string | string[]): Excel.ConditionalFormatCollection;
@@ -16987,7 +22243,7 @@ declare namespace Excel {
         /**
          *
          * Returns the cell value conditional format properties if the current conditional format is a CellValue type.
-            For example to format all cells between 5 and 10.
+            For example to format all cells between 5 and 10. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -16995,77 +22251,77 @@ declare namespace Excel {
         /**
          *
          * Returns the cell value conditional format properties if the current conditional format is a CellValue type.
-            For example to format all cells between 5 and 10.
+            For example to format all cells between 5 and 10. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly cellValueOrNullObject: Excel.CellValueConditionalFormat;
         /**
          *
-         * Returns the ColorScale conditional format properties if the current conditional format is an ColorScale type.
+         * Returns the ColorScale conditional format properties if the current conditional format is an ColorScale type. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly colorScale: Excel.ColorScaleConditionalFormat;
         /**
          *
-         * Returns the ColorScale conditional format properties if the current conditional format is an ColorScale type.
+         * Returns the ColorScale conditional format properties if the current conditional format is an ColorScale type. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly colorScaleOrNullObject: Excel.ColorScaleConditionalFormat;
         /**
          *
-         * Returns the custom conditional format properties if the current conditional format is a custom type.
+         * Returns the custom conditional format properties if the current conditional format is a custom type. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly custom: Excel.CustomConditionalFormat;
         /**
          *
-         * Returns the custom conditional format properties if the current conditional format is a custom type.
+         * Returns the custom conditional format properties if the current conditional format is a custom type. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly customOrNullObject: Excel.CustomConditionalFormat;
         /**
          *
-         * Returns the data bar properties if the current conditional format is a data bar.
+         * Returns the data bar properties if the current conditional format is a data bar. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly dataBar: Excel.DataBarConditionalFormat;
         /**
          *
-         * Returns the data bar properties if the current conditional format is a data bar.
+         * Returns the data bar properties if the current conditional format is a data bar. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly dataBarOrNullObject: Excel.DataBarConditionalFormat;
         /**
          *
-         * Returns the IconSet conditional format properties if the current conditional format is an IconSet type.
+         * Returns the IconSet conditional format properties if the current conditional format is an IconSet type. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly iconSet: Excel.IconSetConditionalFormat;
         /**
          *
-         * Returns the IconSet conditional format properties if the current conditional format is an IconSet type.
+         * Returns the IconSet conditional format properties if the current conditional format is an IconSet type. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly iconSetOrNullObject: Excel.IconSetConditionalFormat;
         /**
          *
-         * Returns the preset criteria conditional format such as above average/below average/unique values/contains blank/nonblank/error/noerror properties.
+         * Returns the preset criteria conditional format. See Excel.PresetCriteriaConditionalFormat for more details.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly preset: Excel.PresetCriteriaConditionalFormat;
         /**
          *
-         * Returns the preset criteria conditional format such as above average/below average/unique values/contains blank/nonblank/error/noerror properties.
+         * Returns the preset criteria conditional format. See Excel.PresetCriteriaConditionalFormat for more details.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -17073,7 +22329,7 @@ declare namespace Excel {
         /**
          *
          * Returns the specific text conditional format properties if the current conditional format is a text type.
-            For example to format cells matching the word "Text".
+            For example to format cells matching the word "Text". Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -17081,7 +22337,7 @@ declare namespace Excel {
         /**
          *
          * Returns the specific text conditional format properties if the current conditional format is a text type.
-            For example to format cells matching the word "Text".
+            For example to format cells matching the word "Text". Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -17089,7 +22345,7 @@ declare namespace Excel {
         /**
          *
          * Returns the Top/Bottom conditional format properties if the current conditional format is an TopBottom type.
-            For example to format the top 10% or bottom 10 items.
+            For example to format the top 10% or bottom 10 items. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -17097,14 +22353,14 @@ declare namespace Excel {
         /**
          *
          * Returns the Top/Bottom conditional format properties if the current conditional format is an TopBottom type.
-            For example to format the top 10% or bottom 10 items.
+            For example to format the top 10% or bottom 10 items. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly topBottomOrNullObject: Excel.TopBottomConditionalFormat;
         /**
          *
-         * The Priority of the Conditional Format within the current ConditionalFormatCollection.
+         * The Priority of the Conditional Format within the current ConditionalFormatCollection. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -17115,7 +22371,7 @@ declare namespace Excel {
             changes other conditional formats' priorities, to allow for a contiguous priority order.
             Use a negative priority to begin from the back.
             Priorities greater than than bounds will get and set to the maximum (or minimum if negative) priority.
-            Also note that if you change the priority, you have to re-fetch a new copy of the object at that new priority location if you want to make further changes to it.
+            Also note that if you change the priority, you have to re-fetch a new copy of the object at that new priority location if you want to make further changes to it. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -17130,15 +22386,25 @@ declare namespace Excel {
         stopIfTrue: boolean;
         /**
          *
-         * A type of conditional format. Only one can be set at a time. Read-Only.
+         * A type of conditional format. Only one can be set at a time. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly type: Excel.ConditionalFormatType | "Custom" | "DataBar" | "ColorScale" | "IconSet" | "TopBottom" | "PresetCriteria" | "ContainsText" | "CellValue";
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ConditionalFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ConditionalFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ConditionalFormat): void;
+        set(properties: Excel.ConditionalFormat): void;
         /**
          *
          * Deletes this conditional format.
@@ -17148,7 +22414,7 @@ declare namespace Excel {
         delete(): void;
         /**
          *
-         * Returns the range the conditonal format is applied to or a null object if the range is discontiguous. Read-only.
+         * Returns the range the conditonal format is applied to. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -17162,6 +22428,18 @@ declare namespace Excel {
         getRangeOrNullObject(): Excel.Range;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ConditionalFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ConditionalFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ConditionalFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ConditionalFormatLoadOptions): Excel.ConditionalFormat;
         load(option?: string | string[]): Excel.ConditionalFormat;
@@ -17180,14 +22458,14 @@ declare namespace Excel {
     class DataBarConditionalFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Representation of all values to the left of the axis in an Excel data bar.
+         * Representation of all values to the left of the axis in an Excel data bar. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly negativeFormat: Excel.ConditionalDataBarNegativeFormat;
         /**
          *
-         * Representation of all values to the right of the axis in an Excel data bar.
+         * Representation of all values to the right of the axis in an Excel data bar. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -17235,12 +22513,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         upperBoundRule: Excel.ConditionalDataBarRule;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.DataBarConditionalFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.DataBarConditionalFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: DataBarConditionalFormat): void;
+        set(properties: Excel.DataBarConditionalFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.DataBarConditionalFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.DataBarConditionalFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.DataBarConditionalFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.DataBarConditionalFormatLoadOptions): Excel.DataBarConditionalFormat;
         load(option?: string | string[]): Excel.DataBarConditionalFormat;
@@ -17279,12 +22579,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         gradientFill: boolean;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ConditionalDataBarPositiveFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ConditionalDataBarPositiveFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ConditionalDataBarPositiveFormat): void;
+        set(properties: Excel.ConditionalDataBarPositiveFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ConditionalDataBarPositiveFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ConditionalDataBarPositiveFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ConditionalDataBarPositiveFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ConditionalDataBarPositiveFormatLoadOptions): Excel.ConditionalDataBarPositiveFormat;
         load(option?: string | string[]): Excel.ConditionalDataBarPositiveFormat;
@@ -17330,12 +22652,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         matchPositiveFillColor: boolean;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ConditionalDataBarNegativeFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ConditionalDataBarNegativeFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ConditionalDataBarNegativeFormat): void;
+        set(properties: Excel.ConditionalDataBarNegativeFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ConditionalDataBarNegativeFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ConditionalDataBarNegativeFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ConditionalDataBarNegativeFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ConditionalDataBarNegativeFormatLoadOptions): Excel.ConditionalDataBarNegativeFormat;
         load(option?: string | string[]): Excel.ConditionalDataBarNegativeFormat;
@@ -17376,24 +22720,46 @@ declare namespace Excel {
     class CustomConditionalFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Returns a format object, encapsulating the conditional formats font, fill, borders, and other properties.
+         * Returns a format object, encapsulating the conditional formats font, fill, borders, and other properties. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly format: Excel.ConditionalRangeFormat;
         /**
          *
-         * Represents the Rule object on this conditional format.
+         * Represents the Rule object on this conditional format. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly rule: Excel.ConditionalFormatRule;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.CustomConditionalFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.CustomConditionalFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: CustomConditionalFormat): void;
+        set(properties: Excel.CustomConditionalFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.CustomConditionalFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.CustomConditionalFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.CustomConditionalFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.CustomConditionalFormatLoadOptions): Excel.CustomConditionalFormat;
         load(option?: string | string[]): Excel.CustomConditionalFormat;
@@ -17431,12 +22797,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         formulaR1C1: string;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ConditionalFormatRule): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ConditionalFormatRuleUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ConditionalFormatRule): void;
+        set(properties: Excel.ConditionalFormatRule): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ConditionalFormatRule` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ConditionalFormatRule` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ConditionalFormatRule` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ConditionalFormatRuleLoadOptions): Excel.ConditionalFormatRule;
         load(option?: string | string[]): Excel.ConditionalFormatRule;
@@ -17455,7 +22843,7 @@ declare namespace Excel {
     class IconSetConditionalFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * An array of Criteria and IconSets for the rules and potential custom icons for conditional icons. Note that for the first criterion only the custom icon can be modified, while type, formula and operator will be ignored when set.
+         * An array of Criteria and IconSets for the rules and potential custom icons for conditional icons. Note that for the first criterion only the custom icon can be modified, while type, formula, and operator will be ignored when set.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -17481,12 +22869,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         style: Excel.IconSet | "Invalid" | "ThreeArrows" | "ThreeArrowsGray" | "ThreeFlags" | "ThreeTrafficLights1" | "ThreeTrafficLights2" | "ThreeSigns" | "ThreeSymbols" | "ThreeSymbols2" | "FourArrows" | "FourArrowsGray" | "FourRedToBlack" | "FourRating" | "FourTrafficLights" | "FiveArrows" | "FiveArrowsGray" | "FiveRating" | "FiveQuarters" | "ThreeStars" | "ThreeTriangles" | "FiveBoxes";
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.IconSetConditionalFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.IconSetConditionalFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: IconSetConditionalFormat): void;
+        set(properties: Excel.IconSetConditionalFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.IconSetConditionalFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.IconSetConditionalFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.IconSetConditionalFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.IconSetConditionalFormatLoadOptions): Excel.IconSetConditionalFormat;
         load(option?: string | string[]): Excel.IconSetConditionalFormat;
@@ -17553,12 +22963,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         readonly threeColorScale: boolean;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ColorScaleConditionalFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ColorScaleConditionalFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ColorScaleConditionalFormat): void;
+        set(properties: Excel.ColorScaleConditionalFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ColorScaleConditionalFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ColorScaleConditionalFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ColorScaleConditionalFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ColorScaleConditionalFormatLoadOptions): Excel.ColorScaleConditionalFormat;
         load(option?: string | string[]): Excel.ColorScaleConditionalFormat;
@@ -17599,7 +23031,7 @@ declare namespace Excel {
     }
     /**
      *
-     * Represents a Color Scale Criterion which contains a type, value and a color.
+     * Represents a Color Scale Criterion which contains a type, value, and a color.
      *
      * [Api set: ExcelApi 1.6]
      */
@@ -17635,7 +23067,7 @@ declare namespace Excel {
     class TopBottomConditionalFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Returns a format object, encapsulating the conditional formats font, fill, borders, and other properties.
+         * Returns a format object, encapsulating the conditional formats font, fill, borders, and other properties. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -17647,12 +23079,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         rule: Excel.ConditionalTopBottomRule;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.TopBottomConditionalFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.TopBottomConditionalFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: TopBottomConditionalFormat): void;
+        set(properties: Excel.TopBottomConditionalFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.TopBottomConditionalFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.TopBottomConditionalFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.TopBottomConditionalFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.TopBottomConditionalFormatLoadOptions): Excel.TopBottomConditionalFormat;
         load(option?: string | string[]): Excel.TopBottomConditionalFormat;
@@ -17686,7 +23140,7 @@ declare namespace Excel {
     }
     /**
      *
-     * Represents the the preset criteria conditional format such as above average/below average/unique values/contains blank/nonblank/error/noerror.
+     * Represents the the preset criteria conditional format such as above average, below average, unique values, contains blank, nonblank, error, and noerror.
      *
      * [Api set: ExcelApi 1.6]
      */
@@ -17705,12 +23159,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         rule: Excel.ConditionalPresetCriteriaRule;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.PresetCriteriaConditionalFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.PresetCriteriaConditionalFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: PresetCriteriaConditionalFormat): void;
+        set(properties: Excel.PresetCriteriaConditionalFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.PresetCriteriaConditionalFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.PresetCriteriaConditionalFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.PresetCriteriaConditionalFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.PresetCriteriaConditionalFormatLoadOptions): Excel.PresetCriteriaConditionalFormat;
         load(option?: string | string[]): Excel.PresetCriteriaConditionalFormat;
@@ -17744,7 +23220,7 @@ declare namespace Excel {
     class TextConditionalFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Returns a format object, encapsulating the conditional formats font, fill, borders, and other properties.
+         * Returns a format object, encapsulating the conditional formats font, fill, borders, and other properties. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -17756,12 +23232,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         rule: Excel.ConditionalTextComparisonRule;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.TextConditionalFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.TextConditionalFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: TextConditionalFormat): void;
+        set(properties: Excel.TextConditionalFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.TextConditionalFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.TextConditionalFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.TextConditionalFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.TextConditionalFormatLoadOptions): Excel.TextConditionalFormat;
         load(option?: string | string[]): Excel.TextConditionalFormat;
@@ -17814,12 +23312,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         rule: Excel.ConditionalCellValueRule;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.CellValueConditionalFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.CellValueConditionalFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: CellValueConditionalFormat): void;
+        set(properties: Excel.CellValueConditionalFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.CellValueConditionalFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.CellValueConditionalFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.CellValueConditionalFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.CellValueConditionalFormatLoadOptions): Excel.CellValueConditionalFormat;
         load(option?: string | string[]): Excel.CellValueConditionalFormat;
@@ -17831,7 +23351,7 @@ declare namespace Excel {
     }
     /**
      *
-     * Represents a Cell Value Conditional Format Rule
+     * Represents a cell value conditional format rule.
      *
      * [Api set: ExcelApi 1.6]
      */
@@ -17867,21 +23387,21 @@ declare namespace Excel {
     class ConditionalRangeFormat extends OfficeExtension.ClientObject {
         /**
          *
-         * Collection of border objects that apply to the overall conditional format range.
+         * Collection of border objects that apply to the overall conditional format range. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly borders: Excel.ConditionalRangeBorderCollection;
         /**
          *
-         * Returns the fill object defined on the overall conditional format range.
+         * Returns the fill object defined on the overall conditional format range. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly fill: Excel.ConditionalRangeFill;
         /**
          *
-         * Returns the font object defined on the overall conditional format range.
+         * Returns the font object defined on the overall conditional format range. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -17893,12 +23413,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         numberFormat: any;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ConditionalRangeFormat): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ConditionalRangeFormatUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ConditionalRangeFormat): void;
+        set(properties: Excel.ConditionalRangeFormat): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ConditionalRangeFormat` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ConditionalRangeFormat` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ConditionalRangeFormat` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ConditionalRangeFormatLoadOptions): Excel.ConditionalRangeFormat;
         load(option?: string | string[]): Excel.ConditionalRangeFormat;
@@ -17910,7 +23452,7 @@ declare namespace Excel {
     }
     /**
      *
-     * This object represents the font attributes (font style,, color, etc.) for an object.
+     * This object represents the font attributes (font style, color, etc.) for an object.
      *
      * [Api set: ExcelApi 1.6]
      */
@@ -17950,10 +23492,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         underline: Excel.ConditionalRangeFontUnderlineStyle | "None" | "Single" | "Double";
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ConditionalRangeFont): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ConditionalRangeFontUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ConditionalRangeFont): void;
+        set(properties: Excel.ConditionalRangeFont): void;
         /**
          *
          * Resets the font formats.
@@ -17963,6 +23515,18 @@ declare namespace Excel {
         clear(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ConditionalRangeFont` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ConditionalRangeFont` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ConditionalRangeFont` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ConditionalRangeFontLoadOptions): Excel.ConditionalRangeFont;
         load(option?: string | string[]): Excel.ConditionalRangeFont;
@@ -17986,10 +23550,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         color: string;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ConditionalRangeFill): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ConditionalRangeFillUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ConditionalRangeFill): void;
+        set(properties: Excel.ConditionalRangeFill): void;
         /**
          *
          * Resets the fill.
@@ -17999,6 +23573,18 @@ declare namespace Excel {
         clear(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ConditionalRangeFill` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ConditionalRangeFill` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ConditionalRangeFill` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ConditionalRangeFillLoadOptions): Excel.ConditionalRangeFill;
         load(option?: string | string[]): Excel.ConditionalRangeFill;
@@ -18036,12 +23622,34 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.6]
          */
         style: Excel.ConditionalRangeBorderLineStyle | "None" | "Continuous" | "Dash" | "DashDot" | "DashDotDot" | "Dot";
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.ConditionalRangeBorder): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.ConditionalRangeBorderUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: ConditionalRangeBorder): void;
+        set(properties: Excel.ConditionalRangeBorder): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ConditionalRangeBorder` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ConditionalRangeBorder` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ConditionalRangeBorder` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ConditionalRangeBorderLoadOptions): Excel.ConditionalRangeBorder;
         load(option?: string | string[]): Excel.ConditionalRangeBorder;
@@ -18060,28 +23668,28 @@ declare namespace Excel {
     class ConditionalRangeBorderCollection extends OfficeExtension.ClientObject {
         /**
          *
-         * Gets the top border
+         * Gets the bottom border. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly bottom: Excel.ConditionalRangeBorder;
         /**
          *
-         * Gets the top border
+         * Gets the left border. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly left: Excel.ConditionalRangeBorder;
         /**
          *
-         * Gets the top border
+         * Gets the right border. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
         readonly right: Excel.ConditionalRangeBorder;
         /**
          *
-         * Gets the top border
+         * Gets the top border. Read-only.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -18097,7 +23705,7 @@ declare namespace Excel {
         readonly count: number;
         /**
          *
-         * Gets a border object using its name
+         * Gets a border object using its name.
          *
          * [Api set: ExcelApi 1.6]
          *
@@ -18106,7 +23714,7 @@ declare namespace Excel {
         getItem(index: Excel.ConditionalRangeBorderIndex): Excel.ConditionalRangeBorder;
         /**
          *
-         * Gets a border object using its name
+         * Gets a border object using its name.
          *
          * [Api set: ExcelApi 1.6]
          *
@@ -18115,7 +23723,7 @@ declare namespace Excel {
         getItem(index: "EdgeTop" | "EdgeBottom" | "EdgeLeft" | "EdgeRight"): Excel.ConditionalRangeBorder;
         /**
          *
-         * Gets a border object using its index
+         * Gets a border object using its index.
          *
          * [Api set: ExcelApi 1.6]
          *
@@ -18124,6 +23732,18 @@ declare namespace Excel {
         getItemAt(index: number): Excel.ConditionalRangeBorder;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.ConditionalRangeBorderCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.ConditionalRangeBorderCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.ConditionalRangeBorderCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.ConditionalRangeBorderCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.ConditionalRangeBorderCollection;
         load(option?: string | string[]): Excel.ConditionalRangeBorderCollection;
@@ -18284,10 +23904,20 @@ declare namespace Excel {
          * [Api set: ExcelApi 1.7]
          */
         wrapText: boolean;
-        /** Sets multiple properties on the object at the same time, based on JSON input. */
+        /** Sets multiple properties of an object at the same time. You can pass either a plain object with the appropriate properties, or another API object of the same type.
+         *
+         * @remarks
+         *
+         * This method has the following additional signature:
+         *
+         * `set(properties: Excel.Style): void`
+         *
+         * @param properties A JavaScript object with properties that are structured isomorphically to the properties of the object on which the method is called.
+         * @param options Provides an option to suppress errors if the properties object tries to set any read-only properties.
+         */
         set(properties: Interfaces.StyleUpdateData, options?: OfficeExtension.UpdateOptions): void;
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
-        set(properties: Style): void;
+        set(properties: Excel.Style): void;
         /**
          *
          * Deletes this style.
@@ -18297,6 +23927,18 @@ declare namespace Excel {
         delete(): void;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.Style` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.Style` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.Style` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.StyleLoadOptions): Excel.Style;
         load(option?: string | string[]): Excel.Style;
@@ -18335,6 +23977,18 @@ declare namespace Excel {
         getItem(name: string): Excel.Style;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): Excel.StyleCollection` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): Excel.StyleCollection` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): Excel.StyleCollection` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.StyleCollectionLoadOptions & Excel.Interfaces.CollectionLoadOptions): Excel.StyleCollection;
         load(option?: string | string[]): Excel.StyleCollection;
@@ -18729,7 +24383,6 @@ declare namespace Excel {
         doughnut = "Doughnut",
         radar = "Radar",
     }
-
     /**
      * [Api set: ExcelApi 1.1]
      */
@@ -18847,7 +24500,7 @@ declare namespace Excel {
         hyperlinks = "Hyperlinks",
         /**
          *
-         * Removes hyperlinks and formatting for the cell but leaves content, conditional formats and data validation intact.
+         * Removes hyperlinks and formatting for the cell but leaves content, conditional formats, and data validation intact.
          *
          */
         removeHyperlinks = "RemoveHyperlinks",
@@ -19368,88 +25021,94 @@ declare namespace Excel {
     enum EventType {
         /**
          *
-         * WorksheetChanged represents the type of event that is registered on Worksheet or WorksheetCollection, and occurs when data changes.
+         * WorksheetChanged represents the type of event registered on Worksheet or WorksheetCollection, and occurs when data changes.
          *
          */
         worksheetChanged = "WorksheetChanged",
         /**
          *
-         * WorksheetSelectionChanged represents the type of event that is registered on Worksheet, and occurs when selection changes.
+         * WorksheetSelectionChanged represents the type of event registered on Worksheet, and occurs when selection changes.
          *
          */
         worksheetSelectionChanged = "WorksheetSelectionChanged",
         /**
          *
-         * WorksheetAdded represents the type of event that is registered on WorksheetCollection, and occurs when a new worksheet is added to the workbook.
+         * WorksheetAdded represents the type of event registered on WorksheetCollection, and occurs when a new worksheet is added to the workbook.
          *
          */
         worksheetAdded = "WorksheetAdded",
         /**
          *
-         * WorksheetActivated represents the type of event that is registered on Worksheet or WorksheetCollection, and occurs when worksheet activates.
+         * WorksheetActivated represents the type of event registered on Worksheet or WorksheetCollection, and occurs when worksheet activates.
          *
          */
         worksheetActivated = "WorksheetActivated",
         /**
          *
-         * WorksheetDeactivated represents the type of event that is registered on Worksheet or WorksheetCollection, and occurs when worksheet deactivates.
+         * WorksheetDeactivated represents the type of event registered on Worksheet or WorksheetCollection, and occurs when worksheet deactivates.
          *
          */
         worksheetDeactivated = "WorksheetDeactivated",
         /**
          *
-         * TableChanged represents the type of event that is registered on Table, and occurs when data changes.
+         * TableChanged represents the type of event registered on Table, and occurs when data changes.
          *
          */
         tableChanged = "TableChanged",
         /**
          *
-         * TableSelectionChanged represents the type of event that is registered on Table, and occurs when selection changes.
+         * TableSelectionChanged represents the type of event registered on Table, and occurs when selection changes.
          *
          */
         tableSelectionChanged = "TableSelectionChanged",
         /**
          *
-         * WorksheetDeleted represents the type of event that is registered on WorksheetCollection, and occurs when a worksheet is deleted from the workbook.
+         * WorksheetDeleted represents the type of event registered on WorksheetCollection, and occurs when a worksheet is deleted from the workbook.
          *
          */
         worksheetDeleted = "WorksheetDeleted",
         /**
          *
-         * ChartAdded represents the type of event that is registered on ChartCollection, and occurs when a new chart is added to the worksheet.
+         * ChartAdded represents the type of event registered on ChartCollection, and occurs when a new chart is added to the worksheet.
          *
          */
         chartAdded = "ChartAdded",
         /**
          *
-         * ChartActivated represents the type of event that is registered on Chart or ChartCollection, and occurs when chart activates.
+         * ChartActivated represents the type of event registered on Chart or ChartCollection, and occurs when chart activates.
          *
          */
         chartActivated = "ChartActivated",
         /**
          *
-         * ChartDeactivated represents the type of event that is registered on Chart or ChartCollection, and occurs when chart deactivates.
+         * ChartDeactivated represents the type of event registered on Chart or ChartCollection, and occurs when chart deactivates.
          *
          */
         chartDeactivated = "ChartDeactivated",
         /**
          *
-         * ChartDeleted represents the type of event that is registered on ChartCollection, and occurs when a chart is deleted from the worksheet.
+         * ChartDeleted represents the type of event registered on ChartCollection, and occurs when a chart is deleted from the worksheet.
          *
          */
         chartDeleted = "ChartDeleted",
         /**
          *
-         * WorksheetCalculated represents the type of event that is registered on Worksheet or WorksheetCollection, and occurs when a worksheet is calculated.
+         * WorksheetCalculated represents the type of event registered on Worksheet or WorksheetCollection, and occurs when a worksheet is calculated.
          *
          */
         worksheetCalculated = "WorksheetCalculated",
         /**
          *
-         * ChartActivated represents the type of event that is registered on Chart or ChartCollection, and occurs when chart activates.
+         * ChartActivated represents the type of event registered on Chart or ChartCollection, and occurs when chart activates.
          *
          */
         visualSelectionChanged = "VisualSelectionChanged",
+        /**
+         *
+         * TableAdded represents the type of event registered on TableCollection, and occurs when a table is added.
+         *
+         */
+        tableAdded = "TableAdded",
     }
     /**
      * [Api set: ExcelApi 1.7]
@@ -19501,52 +25160,6 @@ declare namespace Excel {
     enum PageOrientation {
         portrait = "Portrait",
         landscape = "Landscape",
-    }
-    /**
-     * [Api set: ExcelApi 1.7]
-     */
-    enum PaperType {
-        letter = "Letter",
-        letterSmall = "LetterSmall",
-        tabloid = "Tabloid",
-        ledger = "Ledger",
-        legal = "Legal",
-        statement = "Statement",
-        executive = "Executive",
-        a3 = "A3",
-        a4 = "A4",
-        a4Small = "A4Small",
-        a5 = "A5",
-        b4 = "B4",
-        b5 = "B5",
-        folio = "Folio",
-        quatro = "Quatro",
-        paper10x14 = "Paper10x14",
-        paper11x17 = "Paper11x17",
-        note = "Note",
-        envelope9 = "Envelope9",
-        envelope10 = "Envelope10",
-        envelope11 = "Envelope11",
-        envelope12 = "Envelope12",
-        envelope14 = "Envelope14",
-        csheet = "Csheet",
-        dsheet = "Dsheet",
-        esheet = "Esheet",
-        envelopeDL = "EnvelopeDL",
-        envelopeC5 = "EnvelopeC5",
-        envelopeC3 = "EnvelopeC3",
-        envelopeC4 = "EnvelopeC4",
-        envelopeC6 = "EnvelopeC6",
-        envelopeC65 = "EnvelopeC65",
-        envelopeB4 = "EnvelopeB4",
-        envelopeB5 = "EnvelopeB5",
-        envelopeB6 = "EnvelopeB6",
-        envelopeItaly = "EnvelopeItaly",
-        envelopeMonarch = "EnvelopeMonarch",
-        envelopePersonal = "EnvelopePersonal",
-        fanfoldUS = "FanfoldUS",
-        fanfoldStdGerman = "FanfoldStdGerman",
-        fanfoldLegalGerman = "FanfoldLegalGerman",
     }
     /**
      * [Api set: ExcelApi 1.7]
@@ -19633,15 +25246,6 @@ declare namespace Excel {
     /**
      * [Api set: ExcelApi 1.7]
      */
-    enum PrintErrorType {
-        errorsDisplayed = "ErrorsDisplayed",
-        errorsBlank = "ErrorsBlank",
-        errorsDash = "ErrorsDash",
-        errorsNotAvailable = "ErrorsNotAvailable",
-    }
-    /**
-     * [Api set: ExcelApi 1.7]
-     */
     enum WorksheetPositionType {
         none = "None",
         before = "Before",
@@ -19672,6 +25276,18 @@ declare namespace Excel {
         readonly value: T;
         /**
          * Queues up a command to load the specified properties of the object. You must call "context.sync()" before reading the properties.
+         *
+         * @remarks
+         *
+         * In addition to this signature, this method has the following signatures:
+         *
+         * `load(option?: string | string[]): FunctionResult<T>` - Where option is a comma-delimited string or an array of strings that specify the properties/relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; }): FunctionResult<T>` - Where option.select is a comma-delimited string that specifies the properties/relationships to load, and options.expand is a comma-delimited string that specifies the relationships to load.
+         *
+         * `load(option?: { select?: string; expand?: string; top?: number; skip?: number }): FunctionResult<T>` - Only available on collection types. It is similar to the preceding signature. Option.top specifies the maximum number of collection items that can be included in the result. Option.skip specifies the number of items that are to be skipped and not included in the result. If option.top is specified, the result set will start after skipping the specified number of items.
+         *
+         * @param options Provides options for which properties of the object to load.
          */
         load(option?: Excel.Interfaces.FunctionResultLoadOptions): FunctionResult<T>;
         load(option?: string | string[]): FunctionResult<T>;
@@ -23445,16 +29061,25 @@ declare namespace Excel {
         unsupportedOperation = "UnsupportedOperation",
         invalidOperationInCellEditMode = "InvalidOperationInCellEditMode",
     }
-    namespace Interfaces {
+    module Interfaces {
+        /**
+        * Provides ways to load properties of only a subset of members of a collection.
+        */
         interface CollectionLoadOptions {
+            /**
+            * Specify the number of items in the queried collection to be included in the result.
+            */
             $top?: number;
+            /**
+            * Specify the number of items in the collection that are to be skipped and not included in the result. If top is specified, the selection of result will start after skipping the specified number of items.
+            */
             $skip?: number;
         }
         /** An interface for updating data on the Application object, for use in "application.set({ ... })". */
         interface ApplicationUpdateData {
             /**
              *
-             * Returns the calculation mode used in the workbook. See Excel.CalculationMode for details.
+             * Returns the calculation mode used in the workbook, as defined by the constants in Excel.CalculationMode. Possible values are: `Automatic`, where Excel controls recalculation; `AutomaticExceptTables`, where Excel controls recalculation but ignores changes in tables; `Manual`, where calculation is done when the user requests it.
              *
              * [Api set: ExcelApi 1.1 for get, 1.8 for set]
              */
@@ -23596,7 +29221,7 @@ declare namespace Excel {
             style?: string;
             /**
              *
-             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
             When setting values to a range, the value argument can be either a single value (string, number or boolean) or a two-dimensional array. If the argument is a single value, it will be applied to all cells in the range.
              *
              * [Api set: ExcelApi 1.1]
@@ -23635,7 +29260,7 @@ declare namespace Excel {
             numberFormat?: any[][];
             /**
              *
-             * Represents the raw values of the specified range view. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * Represents the raw values of the specified range view. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
              *
              * [Api set: ExcelApi 1.3]
              */
@@ -23776,7 +29401,7 @@ declare namespace Excel {
             name?: string;
             /**
              *
-             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
              *
              * [Api set: ExcelApi 1.1]
              */
@@ -23790,7 +29415,7 @@ declare namespace Excel {
         interface TableRowUpdateData {
             /**
              *
-             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
              *
              * [Api set: ExcelApi 1.1]
              */
@@ -23861,7 +29486,7 @@ declare namespace Excel {
             useStandardHeight?: boolean;
             /**
              *
-             * Indicates whether the columnwidth of the Range object equals the standard width of the sheet.
+             * Indicates whether the column width of the Range object equals the standard width of the sheet.
             Returns True if the column width of the Range object equals the standard width of the sheet.
             Returns Null if the range contains more than one column and the columns aren't all the same height.
             Returns False otherwise.
@@ -24020,7 +29645,7 @@ declare namespace Excel {
             legend?: Excel.Interfaces.ChartLegendUpdateData;
             /**
             *
-            * Represents the title of the specified chart, including the text, visibility, position and formating of the title.
+            * Represents the title of the specified chart, including the text, visibility, position, and formating of the title.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -24079,7 +29704,7 @@ declare namespace Excel {
         interface ChartAreaFormatUpdateData {
             /**
             *
-            * Represents the border format of chart area, which includes color, linestyle and weight.
+            * Represents the border format of chart area, which includes color, linestyle, and weight.
             *
             * [Api set: ExcelApi 1.7]
             */
@@ -24193,7 +29818,7 @@ declare namespace Excel {
             showShadow?: boolean;
             /**
              *
-             * Boolean value representing if the series is smooth or not. Only applicable for line and scatter charts.
+             * Boolean value representing if the series is smooth or not. Only applicable to line and scatter charts.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -24231,7 +29856,7 @@ declare namespace Excel {
             format?: Excel.Interfaces.ChartPointFormatUpdateData;
             /**
              *
-             * Represents whether a data point has datalabel. Not applicable for surface charts.
+             * Represents whether a data point has a data label. Not applicable for surface charts.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -24269,7 +29894,7 @@ declare namespace Excel {
         interface ChartPointFormatUpdateData {
             /**
             *
-            * Represents the border format of a chart data point, which includes color, style and weight information.
+            * Represents the border format of a chart data point, which includes color, style, and weight information.
             *
             * [Api set: ExcelApi 1.7]
             */
@@ -24310,7 +29935,7 @@ declare namespace Excel {
             format?: Excel.Interfaces.ChartAxisFormatUpdateData;
             /**
             *
-            * Returns a gridlines object that represents the major gridlines for the specified axis.
+            * Returns a Gridlines object that represents the major gridlines for the specified axis.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -24415,7 +30040,7 @@ declare namespace Excel {
             minorTimeUnitScale?: Excel.ChartAxisTimeUnit | "Days" | "Months" | "Years";
             /**
              *
-             * Represents the interval between two minor tick marks. "Can be set to a numeric value or an empty string (for automatic axis values). The returned value is always a number.
+             * Represents the interval between two minor tick marks. Can be set to a numeric value or an empty string (for automatic axis values). The returned value is always a number.
              *
              * [Api set: ExcelApi 1.1]
              */
@@ -24791,7 +30416,7 @@ declare namespace Excel {
             horizontalAlignment?: Excel.ChartTextHorizontalAlignment | "Center" | "Left" | "Right" | "Justify" | "Distributed";
             /**
              *
-             * Represents the distance, in points, from the left edge of chart title to the left edge of chart area. Null if chart title's not visible.
+             * Represents the distance, in points, from the left edge of chart title to the left edge of chart area. Null if chart title is not visible.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -24833,7 +30458,7 @@ declare namespace Excel {
             textOrientation?: number;
             /**
              *
-             * Represents the distance, in points, from the top edge of chart title to the top of chart area. Null if chart title's not visible.
+             * Represents the distance, in points, from the top edge of chart title to the top of chart area. Null if chart title is not visible.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -24867,7 +30492,7 @@ declare namespace Excel {
         interface ChartTitleFormatUpdateData {
             /**
             *
-            * Represents the border format of chart title, which includes color, linestyle and weight.
+            * Represents the border format of chart title, which includes color, linestyle, and weight.
             *
             * [Api set: ExcelApi 1.7]
             */
@@ -25214,14 +30839,14 @@ declare namespace Excel {
             iconSetOrNullObject?: Excel.Interfaces.IconSetConditionalFormatUpdateData;
             /**
             *
-            * Returns the preset criteria conditional format such as above average/below average/unique values/contains blank/nonblank/error/noerror properties.
+            * Returns the preset criteria conditional format. See Excel.PresetCriteriaConditionalFormat for more details.
             *
             * [Api set: ExcelApi 1.6]
             */
             preset?: Excel.Interfaces.PresetCriteriaConditionalFormatUpdateData;
             /**
             *
-            * Returns the preset criteria conditional format such as above average/below average/unique values/contains blank/nonblank/error/noerror properties.
+            * Returns the preset criteria conditional format. See Excel.PresetCriteriaConditionalFormat for more details.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -25264,7 +30889,7 @@ declare namespace Excel {
             changes other conditional formats' priorities, to allow for a contiguous priority order.
             Use a negative priority to begin from the back.
             Priorities greater than than bounds will get and set to the maximum (or minimum if negative) priority.
-            Also note that if you change the priority, you have to re-fetch a new copy of the object at that new priority location if you want to make further changes to it.
+            Also note that if you change the priority, you have to re-fetch a new copy of the object at that new priority location if you want to make further changes to it. Read-only.
              *
              * [Api set: ExcelApi 1.6]
              */
@@ -25440,7 +31065,7 @@ declare namespace Excel {
         interface IconSetConditionalFormatUpdateData {
             /**
              *
-             * An array of Criteria and IconSets for the rules and potential custom icons for conditional icons. Note that for the first criterion only the custom icon can be modified, while type, formula and operator will be ignored when set.
+             * An array of Criteria and IconSets for the rules and potential custom icons for conditional icons. Note that for the first criterion only the custom icon can be modified, while type, formula, and operator will be ignored when set.
              *
              * [Api set: ExcelApi 1.6]
              */
@@ -25645,28 +31270,28 @@ declare namespace Excel {
         interface ConditionalRangeBorderCollectionUpdateData {
             /**
             *
-            * Gets the top border
+            * Gets the bottom border.
             *
             * [Api set: ExcelApi 1.6]
             */
             bottom?: Excel.Interfaces.ConditionalRangeBorderUpdateData;
             /**
             *
-            * Gets the top border
+            * Gets the left border.
             *
             * [Api set: ExcelApi 1.6]
             */
             left?: Excel.Interfaces.ConditionalRangeBorderUpdateData;
             /**
             *
-            * Gets the top border
+            * Gets the right border.
             *
             * [Api set: ExcelApi 1.6]
             */
             right?: Excel.Interfaces.ConditionalRangeBorderUpdateData;
             /**
             *
-            * Gets the top border
+            * Gets the top border.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -25810,7 +31435,7 @@ declare namespace Excel {
         interface ApplicationData {
             /**
              *
-             * Returns the calculation mode used in the workbook. See Excel.CalculationMode for details.
+             * Returns the calculation mode used in the workbook, as defined by the constants in Excel.CalculationMode. Possible values are: `Automatic`, where Excel controls recalculation; `AutomaticExceptTables`, where Excel controls recalculation but ignores changes in tables; `Manual`, where calculation is done when the user requests it.
              *
              * [Api set: ExcelApi 1.1 for get, 1.8 for set]
              */
@@ -25820,77 +31445,77 @@ declare namespace Excel {
         interface WorkbookData {
             /**
             *
-            * Represents the Excel application instance that contains this workbook.
+            * Represents the Excel application instance that contains this workbook. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             application?: Excel.Interfaces.ApplicationData;
             /**
             *
-            * Represents a collection of bindings that are part of the workbook.
+            * Represents a collection of bindings that are part of the workbook. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             bindings?: Excel.Interfaces.BindingData[];
             /**
             *
-            * Represents the collection of custom XML parts contained by this workbook.
+            * Represents the collection of custom XML parts contained by this workbook. Read-only.
             *
             * [Api set: ExcelApi 1.5]
             */
             customXmlParts?: Excel.Interfaces.CustomXmlPartData[];
             /**
             *
-            * Represents a collection of workbook scoped named items (named ranges and constants).
+            * Represents a collection of workbook scoped named items (named ranges and constants). Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             names?: Excel.Interfaces.NamedItemData[];
             /**
             *
-            * Represents a collection of PivotTables associated with the workbook.
+            * Represents a collection of PivotTables associated with the workbook. Read-only.
             *
             * [Api set: ExcelApi 1.3]
             */
             pivotTables?: Excel.Interfaces.PivotTableData[];
             /**
             *
-            * Gets the workbook properties.
+            * Gets the workbook properties. Read-only.
             *
             * [Api set: ExcelApi 1.7]
             */
             properties?: Excel.Interfaces.DocumentPropertiesData;
             /**
             *
-            * Represents a collection of Settings associated with the workbook.
+            * Represents a collection of Settings associated with the workbook. Read-only.
             *
             * [Api set: ExcelApi 1.4]
             */
             settings?: Excel.Interfaces.SettingData[];
             /**
             *
-            * Represents a collection of styles associated with the workbook.
+            * Represents a collection of styles associated with the workbook. Read-only.
             *
             * [Api set: ExcelApi 1.7]
             */
             styles?: Excel.Interfaces.StyleData[];
             /**
             *
-            * Represents a collection of tables associated with the workbook.
+            * Represents a collection of tables associated with the workbook. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             tables?: Excel.Interfaces.TableData[];
             /**
             *
-            * Represents a collection of worksheets associated with the workbook.
+            * Represents a collection of worksheets associated with the workbook. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             worksheets?: Excel.Interfaces.WorksheetData[];
             /**
              *
-             * Gets the workbook name.
+             * Gets the workbook name. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -25900,35 +31525,35 @@ declare namespace Excel {
         interface WorksheetData {
             /**
             *
-            * Returns collection of charts that are part of the worksheet.
+            * Returns collection of charts that are part of the worksheet. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             charts?: Excel.Interfaces.ChartData[];
             /**
             *
-            * Collection of names scoped to the current worksheet.
+            * Collection of names scoped to the current worksheet. Read-only.
             *
             * [Api set: ExcelApi 1.4]
             */
             names?: Excel.Interfaces.NamedItemData[];
             /**
             *
-            * Collection of PivotTables that are part of the worksheet.
+            * Collection of PivotTables that are part of the worksheet. Read-only.
             *
             * [Api set: ExcelApi 1.3]
             */
             pivotTables?: Excel.Interfaces.PivotTableData[];
             /**
             *
-            * Returns sheet protection object for a worksheet.
+            * Returns sheet protection object for a worksheet. Read-only.
             *
             * [Api set: ExcelApi 1.2]
             */
             protection?: Excel.Interfaces.WorksheetProtectionData;
             /**
             *
-            * Collection of tables that are part of the worksheet.
+            * Collection of tables that are part of the worksheet. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -25994,14 +31619,14 @@ declare namespace Excel {
         interface WorksheetProtectionData {
             /**
              *
-             * Sheet protection options.
+             * Sheet protection options. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
             options?: Excel.WorksheetProtectionOptions;
             /**
              *
-             * Indicates if the worksheet is protected. Read-Only.
+             * Indicates if the worksheet is protected. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
@@ -26011,7 +31636,7 @@ declare namespace Excel {
         interface RangeData {
             /**
             *
-            * Collection of ConditionalFormats that intersect the range.
+            * Collection of ConditionalFormats that intersect the range. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -26025,7 +31650,7 @@ declare namespace Excel {
             format?: Excel.Interfaces.RangeFormatData;
             /**
             *
-            * The worksheet containing the current range.
+            * The worksheet containing the current range. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -26098,7 +31723,7 @@ declare namespace Excel {
             formulasR1C1?: any[][];
             /**
              *
-             * Represents if all cells of the current range are hidden.
+             * Represents if all cells of the current range are hidden. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
@@ -26112,14 +31737,14 @@ declare namespace Excel {
             hyperlink?: Excel.RangeHyperlink;
             /**
              *
-             * Represents if the current range is an entire column.
+             * Represents if the current range is an entire column. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
             isEntireColumn?: boolean;
             /**
              *
-             * Represents if the current range is an entire row.
+             * Represents if the current range is an entire row. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -26186,7 +31811,7 @@ declare namespace Excel {
             valueTypes?: Excel.RangeValueType[][];
             /**
              *
-             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
             When setting values to a range, the value argument can be either a single value (string, number or boolean) or a two-dimensional array. If the argument is a single value, it will be applied to all cells in the range.
              *
              * [Api set: ExcelApi 1.1]
@@ -26197,14 +31822,14 @@ declare namespace Excel {
         interface RangeViewData {
             /**
             *
-            * Represents a collection of range views associated with the range.
+            * Represents a collection of range views associated with the range. Read-only.
             *
             * [Api set: ExcelApi 1.3]
             */
             rows?: Excel.Interfaces.RangeViewData[];
             /**
              *
-             * Represents the cell addresses of the RangeView.
+             * Represents the cell addresses of the RangeView. Read-only.
              *
              * [Api set: ExcelApi 1.3]
              */
@@ -26274,7 +31899,7 @@ declare namespace Excel {
             valueTypes?: Excel.RangeValueType[][];
             /**
              *
-             * Represents the raw values of the specified range view. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * Represents the raw values of the specified range view. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
              *
              * [Api set: ExcelApi 1.3]
              */
@@ -26313,14 +31938,14 @@ declare namespace Excel {
         interface NamedItemData {
             /**
             *
-            * Returns an object containing values and types of the named item.
+            * Returns an object containing values and types of the named item. Read-only.
             *
             * [Api set: ExcelApi 1.7]
             */
             arrayValues?: Excel.Interfaces.NamedItemArrayValuesData;
             /**
             *
-            * Returns the worksheet on which the named item is scoped to. Throws an error if the items is scoped to the workbook instead.
+            * Returns the worksheet on which the named item is scoped to. Throws an error if the item is scoped to the workbook instead.
             *
             * [Api set: ExcelApi 1.4]
             */
@@ -26355,7 +31980,7 @@ declare namespace Excel {
             name?: string;
             /**
              *
-             * Indicates whether the name is scoped to the workbook or to a specific worksheet. Read-only.
+             * Indicates whether the name is scoped to the workbook or to a specific worksheet. Possible values are: Worksheet, Workbook. Read-only.
              *
              * [Api set: ExcelApi 1.4]
              */
@@ -26428,28 +32053,28 @@ declare namespace Excel {
         interface TableData {
             /**
             *
-            * Represents a collection of all the columns in the table.
+            * Represents a collection of all the columns in the table. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             columns?: Excel.Interfaces.TableColumnData[];
             /**
             *
-            * Represents a collection of all the rows in the table.
+            * Represents a collection of all the rows in the table. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             rows?: Excel.Interfaces.TableRowData[];
             /**
             *
-            * Represents the sorting for the table.
+            * Represents the sorting for the table. Read-only.
             *
             * [Api set: ExcelApi 1.2]
             */
             sort?: Excel.Interfaces.TableSortData;
             /**
             *
-            * The worksheet containing the current table.
+            * The worksheet containing the current table. Read-only.
             *
             * [Api set: ExcelApi 1.2]
             */
@@ -26533,7 +32158,7 @@ declare namespace Excel {
         interface TableColumnData {
             /**
             *
-            * Retrieve the filter applied to the column.
+            * Retrieve the filter applied to the column. Read-only.
             *
             * [Api set: ExcelApi 1.2]
             */
@@ -26561,7 +32186,7 @@ declare namespace Excel {
             name?: string;
             /**
              *
-             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
              *
              * [Api set: ExcelApi 1.1]
              */
@@ -26582,7 +32207,7 @@ declare namespace Excel {
             index?: number;
             /**
              *
-             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
              *
              * [Api set: ExcelApi 1.1]
              */
@@ -26592,28 +32217,28 @@ declare namespace Excel {
         interface RangeFormatData {
             /**
             *
-            * Collection of border objects that apply to the overall range.
+            * Collection of border objects that apply to the overall range. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             borders?: Excel.Interfaces.RangeBorderData[];
             /**
             *
-            * Returns the fill object defined on the overall range.
+            * Returns the fill object defined on the overall range. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             fill?: Excel.Interfaces.RangeFillData;
             /**
             *
-            * Returns the font object defined on the overall range.
+            * Returns the font object defined on the overall range. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             font?: Excel.Interfaces.RangeFontData;
             /**
             *
-            * Returns the format protection object for a range.
+            * Returns the format protection object for a range. Read-only.
             *
             * [Api set: ExcelApi 1.2]
             */
@@ -26660,7 +32285,7 @@ declare namespace Excel {
             useStandardHeight?: boolean;
             /**
              *
-             * Indicates whether the columnwidth of the Range object equals the standard width of the sheet.
+             * Indicates whether the column width of the Range object equals the standard width of the sheet.
             Returns True if the column width of the Range object equals the standard width of the sheet.
             Returns Null if the range contains more than one column and the columns aren't all the same height.
             Returns False otherwise.
@@ -26798,14 +32423,14 @@ declare namespace Excel {
         interface ChartData {
             /**
             *
-            * Represents chart axes.
+            * Represents chart axes. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             axes?: Excel.Interfaces.ChartAxesData;
             /**
             *
-            * Represents the datalabels on the chart.
+            * Represents the datalabels on the chart. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -26819,28 +32444,28 @@ declare namespace Excel {
             format?: Excel.Interfaces.ChartAreaFormatData;
             /**
             *
-            * Represents the legend for the chart.
+            * Represents the legend for the chart. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             legend?: Excel.Interfaces.ChartLegendData;
             /**
             *
-            * Represents either a single series or collection of series in the chart.
+            * Represents either a single series or collection of series in the chart. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             series?: Excel.Interfaces.ChartSeriesData[];
             /**
             *
-            * Represents the title of the specified chart, including the text, visibility, position and formating of the title.
+            * Represents the title of the specified chart, including the text, visibility, position, and formating of the title. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             title?: Excel.Interfaces.ChartTitleData;
             /**
             *
-            * The worksheet containing the current chart.
+            * The worksheet containing the current chart. Read-only.
             *
             * [Api set: ExcelApi 1.2]
             */
@@ -26906,14 +32531,14 @@ declare namespace Excel {
         interface ChartAreaFormatData {
             /**
             *
-            * Represents the border format of chart area, which includes color, linestyle and weight.
+            * Represents the border format of chart area, which includes color, linestyle, and weight. Read-only.
             *
             * [Api set: ExcelApi 1.7]
             */
             border?: Excel.Interfaces.ChartBorderData;
             /**
             *
-            * Represents the font attributes (font name, font size, color, etc.) for the current object.
+            * Represents the font attributes (font name, font size, color, etc.) for the current object. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -26927,21 +32552,21 @@ declare namespace Excel {
         interface ChartSeriesData {
             /**
             *
-            * Represents the formatting of a chart series, which includes fill and line formatting.
+            * Represents the formatting of a chart series, which includes fill and line formatting. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             format?: Excel.Interfaces.ChartSeriesFormatData;
             /**
             *
-            * Represents a collection of all points in the series.
+            * Represents a collection of all points in the series. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             points?: Excel.Interfaces.ChartPointData[];
             /**
             *
-            * Represents a collection of trendlines in the series.
+            * Represents a collection of trendlines in the series. Read-only.
             *
             * [Api set: ExcelApi 1.7]
             */
@@ -27034,7 +32659,7 @@ declare namespace Excel {
             showShadow?: boolean;
             /**
              *
-             * Boolean value representing if the series is smooth or not. Only applicable for line and scatter charts.
+             * Boolean value representing if the series is smooth or not. Only applicable to line and scatter charts.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -27044,7 +32669,7 @@ declare namespace Excel {
         interface ChartSeriesFormatData {
             /**
             *
-            * Represents line formatting.
+            * Represents line formatting. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -27058,7 +32683,7 @@ declare namespace Excel {
         interface ChartPointData {
             /**
             *
-            * Returns the data label of a chart point.
+            * Returns the data label of a chart point. Read-only.
             *
             * [Api set: ExcelApi 1.7]
             */
@@ -27072,7 +32697,7 @@ declare namespace Excel {
             format?: Excel.Interfaces.ChartPointFormatData;
             /**
              *
-             * Represents whether a data point has datalabel. Not applicable for surface charts.
+             * Represents whether a data point has a data label. Not applicable for surface charts.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -27117,7 +32742,7 @@ declare namespace Excel {
         interface ChartPointFormatData {
             /**
             *
-            * Represents the border format of a chart data point, which includes color, style and weight information.
+            * Represents the border format of a chart data point, which includes color, style, and weight information. Read-only.
             *
             * [Api set: ExcelApi 1.7]
             */
@@ -27127,21 +32752,21 @@ declare namespace Excel {
         interface ChartAxesData {
             /**
             *
-            * Represents the category axis in a chart.
+            * Represents the category axis in a chart. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             categoryAxis?: Excel.Interfaces.ChartAxisData;
             /**
             *
-            * Represents the series axis of a 3-dimensional chart.
+            * Represents the series axis of a 3-dimensional chart. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             seriesAxis?: Excel.Interfaces.ChartAxisData;
             /**
             *
-            * Represents the value axis in an axis.
+            * Represents the value axis in an axis. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -27151,35 +32776,35 @@ declare namespace Excel {
         interface ChartAxisData {
             /**
             *
-            * Represents the formatting of a chart object, which includes line and font formatting.
+            * Represents the formatting of a chart object, which includes line and font formatting. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             format?: Excel.Interfaces.ChartAxisFormatData;
             /**
             *
-            * Returns a gridlines object that represents the major gridlines for the specified axis.
+            * Returns a Gridlines object that represents the major gridlines for the specified axis. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             majorGridlines?: Excel.Interfaces.ChartGridlinesData;
             /**
             *
-            * Returns a Gridlines object that represents the minor gridlines for the specified axis.
+            * Returns a Gridlines object that represents the minor gridlines for the specified axis. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             minorGridlines?: Excel.Interfaces.ChartGridlinesData;
             /**
             *
-            * Represents the axis title.
+            * Represents the axis title. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             title?: Excel.Interfaces.ChartAxisTitleData;
             /**
              *
-             * Represents the group for the specified axis. See Excel.ChartAxisGroup for details.
+             * Represents the group for the specified axis. See Excel.ChartAxisGroup for details. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -27214,7 +32839,7 @@ declare namespace Excel {
             crossesAt?: number;
             /**
              *
-             * Represents the custom axis display unit value. Read Only. To set this property, please use the SetCustomDisplayUnit(double) method.
+             * Represents the custom axis display unit value. Read-only. To set this property, please use the SetCustomDisplayUnit(double) method.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -27228,14 +32853,14 @@ declare namespace Excel {
             displayUnit?: Excel.ChartAxisDisplayUnit | "None" | "Hundreds" | "Thousands" | "TenThousands" | "HundredThousands" | "Millions" | "TenMillions" | "HundredMillions" | "Billions" | "Trillions" | "Custom";
             /**
              *
-             * Represents the height, in points, of the chart axis. Null if the axis's not visible.
+             * Represents the height, in points, of the chart axis. Null if the axis is not visible. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
             height?: number;
             /**
              *
-             * Represents the distance, in points, from the left edge of the axis to the left of chart area. Null if the axis's not visible.
+             * Represents the distance, in points, from the left edge of the axis to the left of chart area. Null if the axis is not visible. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -27298,7 +32923,7 @@ declare namespace Excel {
             minorTimeUnitScale?: Excel.ChartAxisTimeUnit | "Days" | "Months" | "Years";
             /**
              *
-             * Represents the interval between two minor tick marks. "Can be set to a numeric value or an empty string (for automatic axis values). The returned value is always a number.
+             * Represents the interval between two minor tick marks. Can be set to a numeric value or an empty string (for automatic axis values). The returned value is always a number.
              *
              * [Api set: ExcelApi 1.1]
              */
@@ -27347,7 +32972,7 @@ declare namespace Excel {
             tickMarkSpacing?: number;
             /**
              *
-             * Represents the distance, in points, from the top edge of the axis to the top of chart area. Null if the axis's not visible.
+             * Represents the distance, in points, from the top edge of the axis to the top of chart area. Null if the axis is not visible. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -27368,7 +32993,7 @@ declare namespace Excel {
             visible?: boolean;
             /**
              *
-             * Represents the width, in points, of the chart axis. Null if the axis's not visible.
+             * Represents the width, in points, of the chart axis. Null if the axis is not visible. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -27378,14 +33003,14 @@ declare namespace Excel {
         interface ChartAxisFormatData {
             /**
             *
-            * Represents the font attributes (font name, font size, color, etc.) for a chart axis element.
+            * Represents the font attributes (font name, font size, color, etc.) for a chart axis element. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             font?: Excel.Interfaces.ChartFontData;
             /**
             *
-            * Represents chart line formatting.
+            * Represents chart line formatting. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -27395,7 +33020,7 @@ declare namespace Excel {
         interface ChartAxisTitleData {
             /**
             *
-            * Represents the formatting of chart axis title.
+            * Represents the formatting of chart axis title. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -27419,7 +33044,7 @@ declare namespace Excel {
         interface ChartAxisTitleFormatData {
             /**
             *
-            * Represents the font attributes, such as font name, font size, color, etc. of chart axis title object.
+            * Represents the font attributes, such as font name, font size, color, etc. of chart axis title object. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -27429,7 +33054,7 @@ declare namespace Excel {
         interface ChartDataLabelsData {
             /**
             *
-            * Represents the format of chart data labels, which includes fill and font formatting.
+            * Represents the format of chart data labels, which includes fill and font formatting. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -27554,7 +33179,7 @@ declare namespace Excel {
         interface ChartDataLabelFormatData {
             /**
             *
-            * Represents the font attributes (font name, font size, color, etc.) for a chart data label.
+            * Represents the font attributes (font name, font size, color, etc.) for a chart data label. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -27564,7 +33189,7 @@ declare namespace Excel {
         interface ChartGridlinesData {
             /**
             *
-            * Represents the formatting of chart gridlines.
+            * Represents the formatting of chart gridlines. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -27581,7 +33206,7 @@ declare namespace Excel {
         interface ChartGridlinesFormatData {
             /**
             *
-            * Represents chart line formatting.
+            * Represents chart line formatting. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -27591,14 +33216,14 @@ declare namespace Excel {
         interface ChartLegendData {
             /**
             *
-            * Represents the formatting of a chart legend, which includes fill and font formatting.
+            * Represents the formatting of a chart legend, which includes fill and font formatting. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             format?: Excel.Interfaces.ChartLegendFormatData;
             /**
             *
-            * Represents a collection of legendEntries in the legend.
+            * Represents a collection of legendEntries in the legend. Read-only.
             *
             * [Api set: ExcelApi 1.7]
             */
@@ -27678,7 +33303,7 @@ declare namespace Excel {
         interface ChartLegendFormatData {
             /**
             *
-            * Represents the font attributes such as font name, font size, color, etc. of a chart legend.
+            * Represents the font attributes such as font name, font size, color, etc. of a chart legend. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -27688,14 +33313,14 @@ declare namespace Excel {
         interface ChartTitleData {
             /**
             *
-            * Represents the formatting of a chart title, which includes fill and font formatting.
+            * Represents the formatting of a chart title, which includes fill and font formatting. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
             format?: Excel.Interfaces.ChartTitleFormatData;
             /**
              *
-             * Returns the height, in points, of the chart title. Read-only. Null if chart title is not visible.
+             * Returns the height, in points, of the chart title. Null if chart title is not visible. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -27709,7 +33334,7 @@ declare namespace Excel {
             horizontalAlignment?: Excel.ChartTextHorizontalAlignment | "Center" | "Left" | "Right" | "Justify" | "Distributed";
             /**
              *
-             * Represents the distance, in points, from the left edge of chart title to the left edge of chart area. Null if chart title's not visible.
+             * Represents the distance, in points, from the left edge of chart title to the left edge of chart area. Null if chart title is not visible.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -27751,7 +33376,7 @@ declare namespace Excel {
             textOrientation?: number;
             /**
              *
-             * Represents the distance, in points, from the top edge of chart title to the top of chart area. Null if chart title's not visible.
+             * Represents the distance, in points, from the top edge of chart title to the top of chart area. Null if chart title is not visible.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -27772,7 +33397,7 @@ declare namespace Excel {
             visible?: boolean;
             /**
              *
-             * Returns the width, in points, of the chart title. Read-only. Null if chart title is not visible.
+             * Returns the width, in points, of the chart title. Null if chart title is not visible. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -27792,14 +33417,14 @@ declare namespace Excel {
         interface ChartTitleFormatData {
             /**
             *
-            * Represents the border format of chart title, which includes color, linestyle and weight.
+            * Represents the border format of chart title, which includes color, linestyle, and weight. Read-only.
             *
             * [Api set: ExcelApi 1.7]
             */
             border?: Excel.Interfaces.ChartBorderData;
             /**
             *
-            * Represents the font attributes (font name, font size, color, etc.) for an object.
+            * Represents the font attributes (font name, font size, color, etc.) for an object. Read-only.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -27951,7 +33576,7 @@ declare namespace Excel {
         interface ChartTrendlineFormatData {
             /**
             *
-            * Represents chart line formatting.
+            * Represents chart line formatting. Read-only.
             *
             * [Api set: ExcelApi 1.7]
             */
@@ -27961,21 +33586,21 @@ declare namespace Excel {
         interface TableSortData {
             /**
              *
-             * Represents the current conditions used to last sort the table.
+             * Represents the current conditions used to last sort the table. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
             fields?: Excel.SortField[];
             /**
              *
-             * Represents whether the casing impacted the last sort of the table.
+             * Represents whether the casing impacted the last sort of the table. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
             matchCase?: boolean;
             /**
              *
-             * Represents Chinese character ordering method last used to sort the table.
+             * Represents Chinese character ordering method last used to sort the table. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
@@ -27985,7 +33610,7 @@ declare namespace Excel {
         interface FilterData {
             /**
              *
-             * The currently applied filter on the given column.
+             * The currently applied filter on the given column. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
@@ -28031,7 +33656,7 @@ declare namespace Excel {
             worksheet?: Excel.Interfaces.WorksheetData;
             /**
              *
-             * Id of the PivotTable.
+             * Id of the PivotTable. Read-only.
              *
              * [Api set: ExcelApi 1.5]
              */
@@ -28168,7 +33793,7 @@ declare namespace Excel {
             /**
             *
             * Returns the cell value conditional format properties if the current conditional format is a CellValue type.
-            For example to format all cells between 5 and 10.
+            For example to format all cells between 5 and 10. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -28176,77 +33801,77 @@ declare namespace Excel {
             /**
             *
             * Returns the cell value conditional format properties if the current conditional format is a CellValue type.
-            For example to format all cells between 5 and 10.
+            For example to format all cells between 5 and 10. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             cellValueOrNullObject?: Excel.Interfaces.CellValueConditionalFormatData;
             /**
             *
-            * Returns the ColorScale conditional format properties if the current conditional format is an ColorScale type.
+            * Returns the ColorScale conditional format properties if the current conditional format is an ColorScale type. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             colorScale?: Excel.Interfaces.ColorScaleConditionalFormatData;
             /**
             *
-            * Returns the ColorScale conditional format properties if the current conditional format is an ColorScale type.
+            * Returns the ColorScale conditional format properties if the current conditional format is an ColorScale type. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             colorScaleOrNullObject?: Excel.Interfaces.ColorScaleConditionalFormatData;
             /**
             *
-            * Returns the custom conditional format properties if the current conditional format is a custom type.
+            * Returns the custom conditional format properties if the current conditional format is a custom type. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             custom?: Excel.Interfaces.CustomConditionalFormatData;
             /**
             *
-            * Returns the custom conditional format properties if the current conditional format is a custom type.
+            * Returns the custom conditional format properties if the current conditional format is a custom type. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             customOrNullObject?: Excel.Interfaces.CustomConditionalFormatData;
             /**
             *
-            * Returns the data bar properties if the current conditional format is a data bar.
+            * Returns the data bar properties if the current conditional format is a data bar. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             dataBar?: Excel.Interfaces.DataBarConditionalFormatData;
             /**
             *
-            * Returns the data bar properties if the current conditional format is a data bar.
+            * Returns the data bar properties if the current conditional format is a data bar. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             dataBarOrNullObject?: Excel.Interfaces.DataBarConditionalFormatData;
             /**
             *
-            * Returns the IconSet conditional format properties if the current conditional format is an IconSet type.
+            * Returns the IconSet conditional format properties if the current conditional format is an IconSet type. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             iconSet?: Excel.Interfaces.IconSetConditionalFormatData;
             /**
             *
-            * Returns the IconSet conditional format properties if the current conditional format is an IconSet type.
+            * Returns the IconSet conditional format properties if the current conditional format is an IconSet type. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             iconSetOrNullObject?: Excel.Interfaces.IconSetConditionalFormatData;
             /**
             *
-            * Returns the preset criteria conditional format such as above average/below average/unique values/contains blank/nonblank/error/noerror properties.
+            * Returns the preset criteria conditional format. See Excel.PresetCriteriaConditionalFormat for more details.
             *
             * [Api set: ExcelApi 1.6]
             */
             preset?: Excel.Interfaces.PresetCriteriaConditionalFormatData;
             /**
             *
-            * Returns the preset criteria conditional format such as above average/below average/unique values/contains blank/nonblank/error/noerror properties.
+            * Returns the preset criteria conditional format. See Excel.PresetCriteriaConditionalFormat for more details.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -28254,7 +33879,7 @@ declare namespace Excel {
             /**
             *
             * Returns the specific text conditional format properties if the current conditional format is a text type.
-            For example to format cells matching the word "Text".
+            For example to format cells matching the word "Text". Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -28262,7 +33887,7 @@ declare namespace Excel {
             /**
             *
             * Returns the specific text conditional format properties if the current conditional format is a text type.
-            For example to format cells matching the word "Text".
+            For example to format cells matching the word "Text". Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -28270,7 +33895,7 @@ declare namespace Excel {
             /**
             *
             * Returns the Top/Bottom conditional format properties if the current conditional format is an TopBottom type.
-            For example to format the top 10% or bottom 10 items.
+            For example to format the top 10% or bottom 10 items. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -28278,14 +33903,14 @@ declare namespace Excel {
             /**
             *
             * Returns the Top/Bottom conditional format properties if the current conditional format is an TopBottom type.
-            For example to format the top 10% or bottom 10 items.
+            For example to format the top 10% or bottom 10 items. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             topBottomOrNullObject?: Excel.Interfaces.TopBottomConditionalFormatData;
             /**
              *
-             * The Priority of the Conditional Format within the current ConditionalFormatCollection.
+             * The Priority of the Conditional Format within the current ConditionalFormatCollection. Read-only.
              *
              * [Api set: ExcelApi 1.6]
              */
@@ -28296,7 +33921,7 @@ declare namespace Excel {
             changes other conditional formats' priorities, to allow for a contiguous priority order.
             Use a negative priority to begin from the back.
             Priorities greater than than bounds will get and set to the maximum (or minimum if negative) priority.
-            Also note that if you change the priority, you have to re-fetch a new copy of the object at that new priority location if you want to make further changes to it.
+            Also note that if you change the priority, you have to re-fetch a new copy of the object at that new priority location if you want to make further changes to it. Read-only.
              *
              * [Api set: ExcelApi 1.6]
              */
@@ -28311,7 +33936,7 @@ declare namespace Excel {
             stopIfTrue?: boolean;
             /**
              *
-             * A type of conditional format. Only one can be set at a time. Read-Only.
+             * A type of conditional format. Only one can be set at a time. Read-only.
              *
              * [Api set: ExcelApi 1.6]
              */
@@ -28321,14 +33946,14 @@ declare namespace Excel {
         interface DataBarConditionalFormatData {
             /**
             *
-            * Representation of all values to the left of the axis in an Excel data bar.
+            * Representation of all values to the left of the axis in an Excel data bar. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             negativeFormat?: Excel.Interfaces.ConditionalDataBarNegativeFormatData;
             /**
             *
-            * Representation of all values to the right of the axis in an Excel data bar.
+            * Representation of all values to the right of the axis in an Excel data bar. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -28438,14 +34063,14 @@ declare namespace Excel {
         interface CustomConditionalFormatData {
             /**
             *
-            * Returns a format object, encapsulating the conditional formats font, fill, borders, and other properties.
+            * Returns a format object, encapsulating the conditional formats font, fill, borders, and other properties. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             format?: Excel.Interfaces.ConditionalRangeFormatData;
             /**
             *
-            * Represents the Rule object on this conditional format.
+            * Represents the Rule object on this conditional format. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -28479,7 +34104,7 @@ declare namespace Excel {
         interface IconSetConditionalFormatData {
             /**
              *
-             * An array of Criteria and IconSets for the rules and potential custom icons for conditional icons. Note that for the first criterion only the custom icon can be modified, while type, formula and operator will be ignored when set.
+             * An array of Criteria and IconSets for the rules and potential custom icons for conditional icons. Note that for the first criterion only the custom icon can be modified, while type, formula, and operator will be ignored when set.
              *
              * [Api set: ExcelApi 1.6]
              */
@@ -28527,7 +34152,7 @@ declare namespace Excel {
         interface TopBottomConditionalFormatData {
             /**
             *
-            * Returns a format object, encapsulating the conditional formats font, fill, borders, and other properties.
+            * Returns a format object, encapsulating the conditional formats font, fill, borders, and other properties. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -28561,7 +34186,7 @@ declare namespace Excel {
         interface TextConditionalFormatData {
             /**
             *
-            * Returns a format object, encapsulating the conditional formats font, fill, borders, and other properties.
+            * Returns a format object, encapsulating the conditional formats font, fill, borders, and other properties. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -28595,21 +34220,21 @@ declare namespace Excel {
         interface ConditionalRangeFormatData {
             /**
             *
-            * Collection of border objects that apply to the overall conditional format range.
+            * Collection of border objects that apply to the overall conditional format range. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             borders?: Excel.Interfaces.ConditionalRangeBorderData[];
             /**
             *
-            * Returns the fill object defined on the overall conditional format range.
+            * Returns the fill object defined on the overall conditional format range. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
             fill?: Excel.Interfaces.ConditionalRangeFillData;
             /**
             *
-            * Returns the font object defined on the overall conditional format range.
+            * Returns the font object defined on the overall conditional format range. Read-only.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -28879,7 +34504,7 @@ declare namespace Excel {
             $all?: boolean;
             /**
              *
-             * Returns the calculation mode used in the workbook. See Excel.CalculationMode for details.
+             * Returns the calculation mode used in the workbook, as defined by the constants in Excel.CalculationMode. Possible values are: `Automatic`, where Excel controls recalculation; `AutomaticExceptTables`, where Excel controls recalculation but ignores changes in tables; `Manual`, where calculation is done when the user requests it.
              *
              * [Api set: ExcelApi 1.1 for get, 1.8 for set]
              */
@@ -28923,7 +34548,7 @@ declare namespace Excel {
             tables?: Excel.Interfaces.TableCollectionLoadOptions;
             /**
              *
-             * Gets the workbook name.
+             * Gets the workbook name. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -29103,14 +34728,14 @@ declare namespace Excel {
             $all?: boolean;
             /**
              *
-             * Sheet protection options.
+             * Sheet protection options. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
             options?: boolean;
             /**
              *
-             * Indicates if the worksheet is protected. Read-Only.
+             * Indicates if the worksheet is protected. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
@@ -29206,7 +34831,7 @@ declare namespace Excel {
             formulasR1C1?: boolean;
             /**
              *
-             * Represents if all cells of the current range are hidden.
+             * Represents if all cells of the current range are hidden. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
@@ -29220,14 +34845,14 @@ declare namespace Excel {
             hyperlink?: boolean;
             /**
              *
-             * Represents if the current range is an entire column.
+             * Represents if the current range is an entire column. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
             isEntireColumn?: boolean;
             /**
              *
-             * Represents if the current range is an entire row.
+             * Represents if the current range is an entire row. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -29294,7 +34919,7 @@ declare namespace Excel {
             valueTypes?: boolean;
             /**
              *
-             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
                 When setting values to a range, the value argument can be either a single value (string, number or boolean) or a two-dimensional array. If the argument is a single value, it will be applied to all cells in the range.
              *
              * [Api set: ExcelApi 1.1]
@@ -29311,7 +34936,7 @@ declare namespace Excel {
             $all?: boolean;
             /**
              *
-             * Represents the cell addresses of the RangeView.
+             * Represents the cell addresses of the RangeView. Read-only.
              *
              * [Api set: ExcelApi 1.3]
              */
@@ -29381,7 +35006,7 @@ declare namespace Excel {
             valueTypes?: boolean;
             /**
              *
-             * Represents the raw values of the specified range view. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * Represents the raw values of the specified range view. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
              *
              * [Api set: ExcelApi 1.3]
              */
@@ -29397,7 +35022,7 @@ declare namespace Excel {
             $all?: boolean;
             /**
              *
-             * For EACH ITEM in the collection: Represents the cell addresses of the RangeView.
+             * For EACH ITEM in the collection: Represents the cell addresses of the RangeView. Read-only.
              *
              * [Api set: ExcelApi 1.3]
              */
@@ -29467,7 +35092,7 @@ declare namespace Excel {
             valueTypes?: boolean;
             /**
              *
-             * For EACH ITEM in the collection: Represents the raw values of the specified range view. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * For EACH ITEM in the collection: Represents the raw values of the specified range view. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
              *
              * [Api set: ExcelApi 1.3]
              */
@@ -29475,7 +35100,7 @@ declare namespace Excel {
         }
         /**
          *
-         * Represents a collection of worksheet objects that are part of the workbook.
+         * Represents a collection of key-value pair setting objects that are part of the workbook. The scope is limited to per file and add-in (task-pane or content) combination.
          *
          * [Api set: ExcelApi 1.4]
          */
@@ -29498,7 +35123,7 @@ declare namespace Excel {
         }
         /**
          *
-         * Setting represents a key-value pair of a setting persisted to the document.
+         * Setting represents a key-value pair of a setting persisted to the document (per file per add-in). These custom key-value pair can be used to store state or lifecycle information needed by the content or task-pane add-in. Note that settings are persisted in the document and hence it is not a place to store any sensitive or protected information such as user information and password.
          *
          * [Api set: ExcelApi 1.4]
          */
@@ -29521,7 +35146,7 @@ declare namespace Excel {
         }
         /**
          *
-         * A collection of all the nameditem objects that are part of the workbook or worksheet, depending on how it was reached.
+         * A collection of all the NamedItem objects that are part of the workbook or worksheet, depending on how it was reached.
          *
          * [Api set: ExcelApi 1.1]
          */
@@ -29536,7 +35161,7 @@ declare namespace Excel {
             arrayValues?: Excel.Interfaces.NamedItemArrayValuesLoadOptions;
             /**
             *
-            * For EACH ITEM in the collection: Returns the worksheet on which the named item is scoped to. Throws an error if the items is scoped to the workbook instead.
+            * For EACH ITEM in the collection: Returns the worksheet on which the named item is scoped to. Throws an error if the item is scoped to the workbook instead.
             *
             * [Api set: ExcelApi 1.4]
             */
@@ -29571,7 +35196,7 @@ declare namespace Excel {
             name?: boolean;
             /**
              *
-             * For EACH ITEM in the collection: Indicates whether the name is scoped to the workbook or to a specific worksheet. Read-only.
+             * For EACH ITEM in the collection: Indicates whether the name is scoped to the workbook or to a specific worksheet. Possible values are: Worksheet, Workbook. Read-only.
              *
              * [Api set: ExcelApi 1.4]
              */
@@ -29600,7 +35225,7 @@ declare namespace Excel {
         }
         /**
          *
-         * Represents a defined name for a range of cells or value. Names can be primitive named objects (as seen in the type below), range object, reference to a range. This object can be used to obtain range object associated with names.
+         * Represents a defined name for a range of cells or value. Names can be primitive named objects (as seen in the type below), range object, or a reference to a range. This object can be used to obtain range object associated with names.
          *
          * [Api set: ExcelApi 1.1]
          */
@@ -29615,7 +35240,7 @@ declare namespace Excel {
             arrayValues?: Excel.Interfaces.NamedItemArrayValuesLoadOptions;
             /**
             *
-            * Returns the worksheet on which the named item is scoped to. Throws an error if the items is scoped to the workbook instead.
+            * Returns the worksheet on which the named item is scoped to. Throws an error if the item is scoped to the workbook instead.
             *
             * [Api set: ExcelApi 1.4]
             */
@@ -29650,7 +35275,7 @@ declare namespace Excel {
             name?: boolean;
             /**
              *
-             * Indicates whether the name is scoped to the workbook or to a specific worksheet. Read-only.
+             * Indicates whether the name is scoped to the workbook or to a specific worksheet. Possible values are: Worksheet, Workbook. Read-only.
              *
              * [Api set: ExcelApi 1.4]
              */
@@ -29998,7 +35623,7 @@ declare namespace Excel {
             name?: boolean;
             /**
              *
-             * For EACH ITEM in the collection: Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * For EACH ITEM in the collection: Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
              *
              * [Api set: ExcelApi 1.1]
              */
@@ -30042,7 +35667,7 @@ declare namespace Excel {
             name?: boolean;
             /**
              *
-             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
              *
              * [Api set: ExcelApi 1.1]
              */
@@ -30070,7 +35695,7 @@ declare namespace Excel {
             index?: boolean;
             /**
              *
-             * For EACH ITEM in the collection: Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * For EACH ITEM in the collection: Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
              *
              * [Api set: ExcelApi 1.1]
              */
@@ -30098,7 +35723,7 @@ declare namespace Excel {
             index?: boolean;
             /**
              *
-             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cell that contain an error will return the error string.
+             * Represents the raw values of the specified range. The data returned could be of type string, number, or a boolean. Cells that contain an error will return the error string.
              *
              * [Api set: ExcelApi 1.1]
              */
@@ -30182,7 +35807,7 @@ declare namespace Excel {
             useStandardHeight?: boolean;
             /**
              *
-             * Indicates whether the columnwidth of the Range object equals the standard width of the sheet.
+             * Indicates whether the column width of the Range object equals the standard width of the sheet.
                 Returns True if the column width of the Range object equals the standard width of the sheet.
                 Returns Null if the range contains more than one column and the columns aren't all the same height.
                 Returns False otherwise.
@@ -30414,7 +36039,7 @@ declare namespace Excel {
             series?: Excel.Interfaces.ChartSeriesCollectionLoadOptions;
             /**
             *
-            * For EACH ITEM in the collection: Represents the title of the specified chart, including the text, visibility, position and formating of the title.
+            * For EACH ITEM in the collection: Represents the title of the specified chart, including the text, visibility, position, and formating of the title.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -30528,7 +36153,7 @@ declare namespace Excel {
             series?: Excel.Interfaces.ChartSeriesCollectionLoadOptions;
             /**
             *
-            * Represents the title of the specified chart, including the text, visibility, position and formating of the title.
+            * Represents the title of the specified chart, including the text, visibility, position, and formating of the title.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -30607,7 +36232,7 @@ declare namespace Excel {
             $all?: boolean;
             /**
             *
-            * Represents the border format of chart area, which includes color, linestyle and weight.
+            * Represents the border format of chart area, which includes color, linestyle, and weight.
             *
             * [Api set: ExcelApi 1.7]
             */
@@ -30730,7 +36355,7 @@ declare namespace Excel {
             showShadow?: boolean;
             /**
              *
-             * For EACH ITEM in the collection: Boolean value representing if the series is smooth or not. Only applicable for line and scatter charts.
+             * For EACH ITEM in the collection: Boolean value representing if the series is smooth or not. Only applicable to line and scatter charts.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -30846,7 +36471,7 @@ declare namespace Excel {
             showShadow?: boolean;
             /**
              *
-             * Boolean value representing if the series is smooth or not. Only applicable for line and scatter charts.
+             * Boolean value representing if the series is smooth or not. Only applicable to line and scatter charts.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -30854,7 +36479,7 @@ declare namespace Excel {
         }
         /**
          *
-         * encapsulates the format properties for the chart series
+         * Encapsulates the format properties for the chart series
          *
          * [Api set: ExcelApi 1.1]
          */
@@ -30892,7 +36517,7 @@ declare namespace Excel {
             format?: Excel.Interfaces.ChartPointFormatLoadOptions;
             /**
              *
-             * For EACH ITEM in the collection: Represents whether a data point has datalabel. Not applicable for surface charts.
+             * For EACH ITEM in the collection: Represents whether a data point has a data label. Not applicable for surface charts.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -30957,7 +36582,7 @@ declare namespace Excel {
             format?: Excel.Interfaces.ChartPointFormatLoadOptions;
             /**
              *
-             * Represents whether a data point has datalabel. Not applicable for surface charts.
+             * Represents whether a data point has a data label. Not applicable for surface charts.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -31008,7 +36633,7 @@ declare namespace Excel {
             $all?: boolean;
             /**
             *
-            * Represents the border format of a chart data point, which includes color, style and weight information.
+            * Represents the border format of a chart data point, which includes color, style, and weight information.
             *
             * [Api set: ExcelApi 1.7]
             */
@@ -31061,7 +36686,7 @@ declare namespace Excel {
             format?: Excel.Interfaces.ChartAxisFormatLoadOptions;
             /**
             *
-            * Returns a gridlines object that represents the major gridlines for the specified axis.
+            * Returns a Gridlines object that represents the major gridlines for the specified axis.
             *
             * [Api set: ExcelApi 1.1]
             */
@@ -31082,7 +36707,7 @@ declare namespace Excel {
             title?: Excel.Interfaces.ChartAxisTitleLoadOptions;
             /**
              *
-             * Represents the group for the specified axis. See Excel.ChartAxisGroup for details.
+             * Represents the group for the specified axis. See Excel.ChartAxisGroup for details. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -31117,7 +36742,7 @@ declare namespace Excel {
             crossesAt?: boolean;
             /**
              *
-             * Represents the custom axis display unit value. Read Only. To set this property, please use the SetCustomDisplayUnit(double) method.
+             * Represents the custom axis display unit value. Read-only. To set this property, please use the SetCustomDisplayUnit(double) method.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -31131,14 +36756,14 @@ declare namespace Excel {
             displayUnit?: boolean;
             /**
              *
-             * Represents the height, in points, of the chart axis. Null if the axis's not visible.
+             * Represents the height, in points, of the chart axis. Null if the axis is not visible. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
             height?: boolean;
             /**
              *
-             * Represents the distance, in points, from the left edge of the axis to the left of chart area. Null if the axis's not visible.
+             * Represents the distance, in points, from the left edge of the axis to the left of chart area. Null if the axis is not visible. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -31201,7 +36826,7 @@ declare namespace Excel {
             minorTimeUnitScale?: boolean;
             /**
              *
-             * Represents the interval between two minor tick marks. "Can be set to a numeric value or an empty string (for automatic axis values). The returned value is always a number.
+             * Represents the interval between two minor tick marks. Can be set to a numeric value or an empty string (for automatic axis values). The returned value is always a number.
              *
              * [Api set: ExcelApi 1.1]
              */
@@ -31250,7 +36875,7 @@ declare namespace Excel {
             tickMarkSpacing?: boolean;
             /**
              *
-             * Represents the distance, in points, from the top edge of the axis to the top of chart area. Null if the axis's not visible.
+             * Represents the distance, in points, from the top edge of the axis to the top of chart area. Null if the axis is not visible. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -31271,7 +36896,7 @@ declare namespace Excel {
             visible?: boolean;
             /**
              *
-             * Represents the width, in points, of the chart axis. Null if the axis's not visible.
+             * Represents the width, in points, of the chart axis. Null if the axis is not visible. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -31675,7 +37300,7 @@ declare namespace Excel {
             format?: Excel.Interfaces.ChartTitleFormatLoadOptions;
             /**
              *
-             * Returns the height, in points, of the chart title. Read-only. Null if chart title is not visible.
+             * Returns the height, in points, of the chart title. Null if chart title is not visible. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -31689,7 +37314,7 @@ declare namespace Excel {
             horizontalAlignment?: boolean;
             /**
              *
-             * Represents the distance, in points, from the left edge of chart title to the left edge of chart area. Null if chart title's not visible.
+             * Represents the distance, in points, from the left edge of chart title to the left edge of chart area. Null if chart title is not visible.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -31731,7 +37356,7 @@ declare namespace Excel {
             textOrientation?: boolean;
             /**
              *
-             * Represents the distance, in points, from the top edge of chart title to the top of chart area. Null if chart title's not visible.
+             * Represents the distance, in points, from the top edge of chart title to the top of chart area. Null if chart title is not visible.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -31752,7 +37377,7 @@ declare namespace Excel {
             visible?: boolean;
             /**
              *
-             * Returns the width, in points, of the chart title. Read-only. Null if chart title is not visible.
+             * Returns the width, in points, of the chart title. Null if chart title is not visible. Read-only.
              *
              * [Api set: ExcelApi 1.7]
              */
@@ -31784,7 +37409,7 @@ declare namespace Excel {
             $all?: boolean;
             /**
             *
-            * Represents the border format of chart title, which includes color, linestyle and weight.
+            * Represents the border format of chart title, which includes color, linestyle, and weight.
             *
             * [Api set: ExcelApi 1.7]
             */
@@ -31829,7 +37454,7 @@ declare namespace Excel {
         }
         /**
          *
-         * Enapsulates the formatting options for line elements.
+         * Encapsulates the formatting options for line elements.
          *
          * [Api set: ExcelApi 1.1]
          */
@@ -32036,21 +37661,21 @@ declare namespace Excel {
             $all?: boolean;
             /**
              *
-             * Represents the current conditions used to last sort the table.
+             * Represents the current conditions used to last sort the table. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
             fields?: boolean;
             /**
              *
-             * Represents whether the casing impacted the last sort of the table.
+             * Represents whether the casing impacted the last sort of the table. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
             matchCase?: boolean;
             /**
              *
-             * Represents Chinese character ordering method last used to sort the table.
+             * Represents Chinese character ordering method last used to sort the table. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
@@ -32066,7 +37691,7 @@ declare namespace Excel {
             $all?: boolean;
             /**
              *
-             * The currently applied filter on the given column.
+             * The currently applied filter on the given column. Read-only.
              *
              * [Api set: ExcelApi 1.2]
              */
@@ -32160,7 +37785,7 @@ declare namespace Excel {
             worksheet?: Excel.Interfaces.WorksheetLoadOptions;
             /**
              *
-             * For EACH ITEM in the collection: Id of the PivotTable.
+             * For EACH ITEM in the collection: Id of the PivotTable. Read-only.
              *
              * [Api set: ExcelApi 1.5]
              */
@@ -32190,7 +37815,7 @@ declare namespace Excel {
             worksheet?: Excel.Interfaces.WorksheetLoadOptions;
             /**
              *
-             * Id of the PivotTable.
+             * Id of the PivotTable. Read-only.
              *
              * [Api set: ExcelApi 1.5]
              */
@@ -32431,14 +38056,14 @@ declare namespace Excel {
             iconSetOrNullObject?: Excel.Interfaces.IconSetConditionalFormatLoadOptions;
             /**
             *
-            * For EACH ITEM in the collection: Returns the preset criteria conditional format such as above average/below average/unique values/contains blank/nonblank/error/noerror properties.
+            * For EACH ITEM in the collection: Returns the preset criteria conditional format. See Excel.PresetCriteriaConditionalFormat for more details.
             *
             * [Api set: ExcelApi 1.6]
             */
             preset?: Excel.Interfaces.PresetCriteriaConditionalFormatLoadOptions;
             /**
             *
-            * For EACH ITEM in the collection: Returns the preset criteria conditional format such as above average/below average/unique values/contains blank/nonblank/error/noerror properties.
+            * For EACH ITEM in the collection: Returns the preset criteria conditional format. See Excel.PresetCriteriaConditionalFormat for more details.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -32477,7 +38102,7 @@ declare namespace Excel {
             topBottomOrNullObject?: Excel.Interfaces.TopBottomConditionalFormatLoadOptions;
             /**
              *
-             * For EACH ITEM in the collection: The Priority of the Conditional Format within the current ConditionalFormatCollection.
+             * For EACH ITEM in the collection: The Priority of the Conditional Format within the current ConditionalFormatCollection. Read-only.
              *
              * [Api set: ExcelApi 1.6]
              */
@@ -32488,7 +38113,7 @@ declare namespace Excel {
                 changes other conditional formats' priorities, to allow for a contiguous priority order.
                 Use a negative priority to begin from the back.
                 Priorities greater than than bounds will get and set to the maximum (or minimum if negative) priority.
-                Also note that if you change the priority, you have to re-fetch a new copy of the object at that new priority location if you want to make further changes to it.
+                Also note that if you change the priority, you have to re-fetch a new copy of the object at that new priority location if you want to make further changes to it. Read-only.
              *
              * [Api set: ExcelApi 1.6]
              */
@@ -32503,7 +38128,7 @@ declare namespace Excel {
             stopIfTrue?: boolean;
             /**
              *
-             * For EACH ITEM in the collection: A type of conditional format. Only one can be set at a time. Read-Only.
+             * For EACH ITEM in the collection: A type of conditional format. Only one can be set at a time. Read-only.
              *
              * [Api set: ExcelApi 1.6]
              */
@@ -32591,14 +38216,14 @@ declare namespace Excel {
             iconSetOrNullObject?: Excel.Interfaces.IconSetConditionalFormatLoadOptions;
             /**
             *
-            * Returns the preset criteria conditional format such as above average/below average/unique values/contains blank/nonblank/error/noerror properties.
+            * Returns the preset criteria conditional format. See Excel.PresetCriteriaConditionalFormat for more details.
             *
             * [Api set: ExcelApi 1.6]
             */
             preset?: Excel.Interfaces.PresetCriteriaConditionalFormatLoadOptions;
             /**
             *
-            * Returns the preset criteria conditional format such as above average/below average/unique values/contains blank/nonblank/error/noerror properties.
+            * Returns the preset criteria conditional format. See Excel.PresetCriteriaConditionalFormat for more details.
             *
             * [Api set: ExcelApi 1.6]
             */
@@ -32637,7 +38262,7 @@ declare namespace Excel {
             topBottomOrNullObject?: Excel.Interfaces.TopBottomConditionalFormatLoadOptions;
             /**
              *
-             * The Priority of the Conditional Format within the current ConditionalFormatCollection.
+             * The Priority of the Conditional Format within the current ConditionalFormatCollection. Read-only.
              *
              * [Api set: ExcelApi 1.6]
              */
@@ -32648,7 +38273,7 @@ declare namespace Excel {
                 changes other conditional formats' priorities, to allow for a contiguous priority order.
                 Use a negative priority to begin from the back.
                 Priorities greater than than bounds will get and set to the maximum (or minimum if negative) priority.
-                Also note that if you change the priority, you have to re-fetch a new copy of the object at that new priority location if you want to make further changes to it.
+                Also note that if you change the priority, you have to re-fetch a new copy of the object at that new priority location if you want to make further changes to it. Read-only.
              *
              * [Api set: ExcelApi 1.6]
              */
@@ -32663,7 +38288,7 @@ declare namespace Excel {
             stopIfTrue?: boolean;
             /**
              *
-             * A type of conditional format. Only one can be set at a time. Read-Only.
+             * A type of conditional format. Only one can be set at a time. Read-only.
              *
              * [Api set: ExcelApi 1.6]
              */
@@ -32867,7 +38492,7 @@ declare namespace Excel {
             $all?: boolean;
             /**
              *
-             * An array of Criteria and IconSets for the rules and potential custom icons for conditional icons. Note that for the first criterion only the custom icon can be modified, while type, formula and operator will be ignored when set.
+             * An array of Criteria and IconSets for the rules and potential custom icons for conditional icons. Note that for the first criterion only the custom icon can be modified, while type, formula, and operator will be ignored when set.
              *
              * [Api set: ExcelApi 1.6]
              */
@@ -32942,7 +38567,7 @@ declare namespace Excel {
         }
         /**
          *
-         * Represents the the preset criteria conditional format such as above average/below average/unique values/contains blank/nonblank/error/noerror.
+         * Represents the the preset criteria conditional format such as above average, below average, unique values, contains blank, nonblank, error, and noerror.
          *
          * [Api set: ExcelApi 1.6]
          */
@@ -33048,7 +38673,7 @@ declare namespace Excel {
         }
         /**
          *
-         * This object represents the font attributes (font style,, color, etc.) for an object.
+         * This object represents the font attributes (font style, color, etc.) for an object.
          *
          * [Api set: ExcelApi 1.6]
          */

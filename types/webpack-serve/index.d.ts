@@ -1,6 +1,8 @@
 // Type definitions for webpack-serve 1.0
 // Project: https://github.com/webpack-contrib/webpack-serve
 // Definitions by: Ryan Clark <https://github.com/rynclark>
+//                 Jokcy <https://github.com/Jokcy>
+//                 ZSkycat <https://github.com/ZSkycat>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 // TypeScript Version: 2.3
 
@@ -16,20 +18,18 @@ export = WebpackServe;
 
 declare module 'webpack' {
   interface Configuration {
-    serve: WebpackServe.Options;
+    serve?: WebpackServe.Options;
   }
 }
 
-declare function WebpackServe(
-  { config }: { config: WebpackServe.Options }
-): Promise<WebpackServe.Instance>;
+declare function WebpackServe(options: WebpackServe.Options): Promise<WebpackServe.Instance>;
 
 declare namespace WebpackServe {
   interface WebpackServeOpen {
     /** Name of the browser to open */
-    app: string;
+    app?: string;
     /** Path on the server to open */
-    path: string;
+    path?: string;
   }
 
   interface WebpackServeMiddleware {
